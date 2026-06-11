@@ -1,5 +1,10 @@
 from docling.document_converter import DocumentConverter
 from typing import List
+from sentence_transformers import SentenceTransformer
+
+model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+
+
 source = "./RandomFile.pdf"  # file path or URL
 converter = DocumentConverter() 
 doc = converter.convert(source).document
@@ -22,7 +27,15 @@ def chunks(doc : str,chunk_size : int, overlap: int) -> List[str]:
         chunks.append(currChunk)
         
     return chunks
+#Size 384 for embeddings
+def embeddings(chunks: List[str]):
+    embeds = []
+    for chunk in chunks:
+        embeds.append(model.encode(chunk))
+    return embeds
 
 chunking = chunks(data,300,50)
-print(len(chunking))
+modelEmbeddings = embeddings
+
+
 
