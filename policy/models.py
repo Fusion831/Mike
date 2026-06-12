@@ -45,13 +45,13 @@ class DrugTier(BaseModel):
 class PriorAuthorizationItem(BaseModel):
     service: str = Field(description="e.g., MRI, CT Scan, Physical Therapy, Bariatric Surgery")
     details: str = Field(description="What are the specific requirements to get this approved?")
-    citation: str = Field(description="Exact section/page number")
+    citation: str = Field(description="Exact markdown heading or section title where this information appears.If unavailable, return 'Citation unavailable in source text")
 
 
 class CoverageExclusion(BaseModel):
     exclusion: str = Field(description="e.g., Cosmetic surgery, Adult dental, Experimental treatments")
     explanation: str = Field(description="Why is it excluded or are there any rare exceptions?")
-    citation: str = Field(description="Exact section/page number")
+    citation: str = Field(description="Exact markdown heading or section title where this information appears.If unavailable, return 'Citation unavailable in source text")
 
 
 class ScenarioExample(BaseModel):
@@ -67,7 +67,7 @@ class DenialRisk(BaseModel):
     citation: str = Field(
     description="""
     Exact markdown heading or section title where this information appears.
-    If unavailable, return 'Citation unavailable in source text'
+    If unavailable, return 'Citation unavailable in source text
     """
     )
 
