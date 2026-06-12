@@ -1,12 +1,11 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
-from mike.api.routers.coverage_evaluation_router import router as coverage_router
-from mike.api.routers.policy_ingestion_router import router as ingestion_router
+from mike.router import router
 
 
 app = FastAPI(title="Mike Backend", version="0.1.0")
-app.include_router(coverage_router)
-app.include_router(ingestion_router)
+app.include_router(router)
 
 
 @app.get("/health")
@@ -16,3 +15,6 @@ def health() -> dict:
         "service": "mike-backend",
         "message": "Coverage evaluation API is running",
     }
+
+
+app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")

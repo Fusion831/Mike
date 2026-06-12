@@ -1,24 +1,91 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
-from typing import Any
+from enum import Enum
+from typing import Any, List
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from mike.domain.enums import (
-    CitationRole,
-    ConfidenceEffect,
-    ConfidenceLevel,
-    CoverageDecision,
-    CoverageRiskCategory,
-    DecisionType,
-    EvaluationStatus,
-    GroundingStatus,
-    RiskSeverity,
-    SourceType,
-)
+# ==========================================
+# 1. Enums
+# ==========================================
 
+class DecisionType(str, Enum):
+    COVERAGE = "coverage"
+    REFERRAL_REQUIREMENT = "referral_requirement"
+    NETWORK_IMPACT = "network_impact"
+    PRIOR_AUTH = "prior_auth"
+    COST_SHARING = "cost_sharing"
+    EXCLUSIONS = "exclusions"
+
+
+class SourceType(str, Enum):
+    POLICY_CONTRACT = "policy_contract"
+    RIDER = "rider"
+    ENDORSEMENT = "endorsement"
+    AMENDMENT = "amendment"
+    SUMMARY_OF_BENEFITS = "summary_of_benefits"
+
+
+class CitationRole(str, Enum):
+    SUPPORTS_COVERAGE = "supports_coverage"
+    SUPPORTS_EXCLUSION = "supports_exclusion"
+    SUPPORTS_CONDITION = "supports_condition"
+    SUPPORTS_RISK = "supports_risk"
+    SUPPORTS_UNCERTAINTY = "supports_uncertainty"
+
+
+class CoverageRiskCategory(str, Enum):
+    DENIAL_RISK = "denial_risk"
+    PRIOR_AUTH_RISK = "prior_auth_risk"
+    REFERRAL_RISK = "referral_risk"
+    OUT_OF_NETWORK_RISK = "out_of_network_risk"
+    DOCUMENTATION_RISK = "documentation_risk"
+    TIMING_RISK = "timing_risk"
+    POLICY_AMBIGUITY_RISK = "policy_ambiguity_risk"
+
+
+class RiskSeverity(str, Enum):
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+class CoverageDecision(str, Enum):
+    LIKELY_COVERED = "likely_covered"
+    LIKELY_NOT_COVERED = "likely_not_covered"
+    CONDITIONALLY_COVERED = "conditionally_covered"
+    CANNOT_DETERMINE_FROM_POLICY = "cannot_determine_from_policy"
+
+
+class ConfidenceLevel(str, Enum):
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+class ConfidenceEffect(str, Enum):
+    RAISES = "raises"
+    LOWERS = "lowers"
+    NEUTRAL = "neutral"
+
+
+class GroundingStatus(str, Enum):
+    FULLY_GROUNDED = "fully_grounded"
+    PARTIALLY_GROUNDED = "partially_grounded"
+    WEAKLY_GROUNDED = "weakly_grounded"
+
+
+class EvaluationStatus(str, Enum):
+    COMPLETED = "completed"
+    INSUFFICIENT_EVIDENCE = "insufficient_evidence"
+    FAILED_VALIDATION = "failed_validation"
+
+
+# ==========================================
+# 2. Domain & Retrieval Models
+# ==========================================
 
 class PolicyFilter(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -209,6 +276,10 @@ class ClaimCitationLink(BaseModel):
     citation_ids: list[str] = Field(default_factory=list)
 
 
+# ==========================================
+# 3. LLM Structured Output Schemas
+# ==========================================
+
 class CoverageAnswerDraft(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -297,3 +368,137 @@ class EvaluationTrace(BaseModel):
     evidence_package: EvidencePackage
     answer_draft: CoverageAnswerDraft
     citation_validation: CitationValidationResult
+
+
+# ==========================================
+# 4. Policy Summary Models (from policy/models.py)
+# ==========================================
+
+class PlanOverview(BaseModel):
+    insurer_name: str
+    plan_name: str
+    mikes_eli5_summary: str = Field(description="A 3-sentence 'Explain Like I'm 5' summary. Break down how this plan functions, who it is best for, and the biggest financial risk.")
+    network_rules: str = Field(description="Explanation of network rules. E.g., 'This is an HMO. You must stay in-network.'")
+    specialist_referral_required: bool = Field(description="True if the user MUST get a PCP referral to see a specialist.")
+    referral_details: str = Field(description="Specific rules about getting referrals, or 'No referral needed' if false.")
+
+
+class FinancialDetail(BaseModel):
+    amount: str
+    nuance: str = Field(description="Crucial context (e.g., 'Applies per family', 'Does not apply to prescription drugs').")
+
+
+class Financials(BaseModel):
+    in_network_deductible: FinancialDetail
+    out_of_network_deductible: FinancialDetail
+    out_of_pocket_max: FinancialDetail
+
+
+class CareCost(BaseModel):
+    cost: str
+    conditions: str = Field(description="e.g., 'Only applies AFTER deductible is met', or 'Waived for first 3 visits'.")
+
+
+class RoutineCare(BaseModel):
+    preventive_care: CareCost
+    primary_care: CareCost
+    specialist: CareCost
+
+
+class EmergencyScenarios(BaseModel):
+    emergency_room: CareCost
+    ambulance: CareCost
+    urgent_care: CareCost
+
+
+class DrugTier(BaseModel):
+    tier_name: str = Field(description="e.g., 'Tier 1 Generic', 'Preferred Brand', 'Specialty'")
+    cost: str = Field(description="Copay or coinsurance")
+    notes: str = Field(description="Specific rules (e.g., 'Requires step therapy', 'Limited to 30-day supply')")
+
+
+class PriorAuthorizationItem(BaseModel):
+    service: str = Field(description="e.g., MRI, CT Scan, Physical Therapy, Bariatric Surgery")
+    details: str = Field(description="What are the specific requirements to get this approved?")
+    citation: str = Field(description="Exact markdown heading or section title where this information appears.If unavailable, return 'Citation unavailable in source text")
+
+
+class CoverageExclusion(BaseModel):
+    exclusion: str = Field(description="e.g., Cosmetic surgery, Adult dental, Experimental treatments")
+    explanation: str = Field(description="Why is it excluded or are there any rare exceptions?")
+    citation: str = Field(description="Exact markdown heading or section title where this information appears.If unavailable, return 'Citation unavailable in source text")
+
+
+class ScenarioExample(BaseModel):
+    scenario: str
+    estimated_user_cost: str
+    assumptions: list[str]
+    explanation: str
+
+
+class DenialRisk(BaseModel):
+    risk: str = Field(description="e.g., 'Missing a Filing Deadline', 'Using an Out-of-Network Anesthesiologist'")
+    explanation: str = Field(description="How this trap typically happens based on the policy text.")
+    prevention_tip: str = Field(description="Actionable advice for the user to prevent this denial.")
+    citation: str = Field(
+        description="""
+        Exact markdown heading or section title where this information appears.
+        If unavailable, return 'Citation unavailable in source text
+        """
+    )
+
+
+class PolicySummary(BaseModel):
+    overview: PlanOverview
+    financials: Financials
+    routine_care: RoutineCare
+    emergency_care: EmergencyScenarios
+    drug_tiers: list[DrugTier] = Field(description="Extract all prescription drug tiers mentioned.")
+    prior_authorization_requirements: list[PriorAuthorizationItem] = Field(description="Extract every explicit prior authorization requirement found.")
+    excluded_services: list[CoverageExclusion] = Field(description="Extract every explicit exclusion found.")
+    example_scenarios: list[ScenarioExample] = Field(description="Create 3 relatable medical scenarios (e.g., broken bone, hospital stay, chronic illness) and estimate the cost.")
+    denial_risks: list[DenialRisk] = Field(description="Identify 3 to 5 strict rules that will result in an automatic claim denial if not followed.")
+
+
+# ==========================================
+# 5. API Schemas
+# ==========================================
+
+class CoverageQuestionInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    question_text: str = Field(min_length=3, max_length=4000)
+    scenario_context: dict[str, str] | None = None
+    requested_decision_type: DecisionType = DecisionType.COVERAGE
+    session_id: UUID | None = None
+    client_request_id: str | None = None
+
+
+class CoverageEvaluationResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    evaluation_id: UUID
+    processing_status: str
+    answer: dict[str, Any]
+    confidence: dict[str, Any]
+    citations: list[dict[str, Any]]
+    audit_ref: dict[str, Any]
+
+
+class PolicyIngestionResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    policy_id: str
+    version: str
+    filename: str
+    ingested_at: str
+    markdown_chunk_count: int
+    total_chunk_count: int
+    summary_generated: bool
+
+
+class PolicyPathIngestionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    file_path: str = Field(min_length=1)
+    policy_version: str = Field(default="v1", min_length=1)

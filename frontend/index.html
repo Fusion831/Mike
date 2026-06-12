@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mike — Your Insurance Navigator</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  <!-- Tailwind Configuration -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#2563EB',
+            secondary: '#3B82F6',
+            tealAccent: '#14B8A6',
+            softTeal: '#2DD4BF',
+          },
+          zIndex: {
+            '35': '35',
+            '45': '45',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="h-screen w-screen relative select-none">
+
+  <!-- Main Background Container -->
+  <div id="app-bg" class="animated-gradient absolute inset-0 -z-10 transition-layout"></div>
+
+  <!-- App Shell -->
+  <div class="h-full w-full flex flex-col justify-between relative transition-layout">
+    
+    <!-- Top Navigation Segmented Control -->
+    <header class="w-full flex justify-center py-6 px-4 shrink-0">
+      <div id="nav-segmented-control" class="relative glass-panel rounded-full p-1.5 flex space-x-1 shadow-lg max-w-sm w-full z-30">
+        <!-- Sliding active tab background pill -->
+        <div id="segmented-indicator" class="segmented-indicator absolute top-1.5 bottom-1.5 left-1.5 rounded-full bg-white shadow-md w-[calc(50%-6px)]"></div>
+        
+        <button id="tab-home" onclick="setWorkspace('home')" class="relative z-10 flex-1 py-1.5 text-center text-sm font-medium text-slate-800 transition-colors focus:outline-none">
+          Home
+        </button>
+        <button id="tab-defense" onclick="setWorkspace('defense')" class="relative z-10 flex-1 py-1.5 text-center text-sm font-medium text-slate-500 transition-colors focus:outline-none">
+          Claim Defense
+        </button>
+      </div>
+    </header>
+
+    <!-- Content Workspace -->
+    <main class="flex-1 w-full max-w-7xl mx-auto px-4 md:px-8 pb-6 flex overflow-hidden relative">
+
+      <!-- ==========================================
+           1. HOME EXPERIENCE (Chat & Snapshot)
+           ========================================== -->
+      <div id="view-home" class="flex-1 flex space-x-6 h-full overflow-hidden transition-layout relative">
+        
+        <!-- Left Side: Chat & Landing Layout -->
+        <div class="flex-1 flex flex-col justify-between h-full bg-transparent overflow-hidden relative transition-layout">
+          
+          <!-- Policy Card Status (Hidden before Ingest) -->
+          <div id="policy-card-container" class="absolute top-0 left-0 w-full flex justify-start z-20 pointer-events-none opacity-0 transition-all duration-700 transform -translate-y-4">
+            <div id="policy-status-card" class="glass-panel p-3.5 rounded-2xl flex items-center space-x-3 shadow-md border border-slate-200 pointer-events-auto">
+              <div class="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
+                <i data-lucide="file-text" class="w-5 h-5"></i>
+              </div>
+              <div class="flex flex-col">
+                <span id="policy-card-name" class="text-sm font-semibold text-slate-800 leading-tight">Policy Document.pdf</span>
+                <span class="text-xs text-blue-600 flex items-center font-medium mt-0.5">
+                  Analyzed <i data-lucide="check" class="w-3.5 h-3.5 ml-1"></i>
+                </span>
+              </div>
+              <button onclick="toggleSnapshot()" class="text-slate-400 hover:text-slate-600 pl-4 border-l border-slate-200 focus:outline-none">
+                <i data-lucide="sidebar" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Hero Landing / Onboarding State (Visible by default in Landing mode) -->
+          <div id="landing-container" class="flex-1 flex flex-col justify-between items-center py-8 max-w-2xl mx-auto w-full transition-layout select-none relative z-10">
+            
+            <!-- Background Hero (will be blurred and dimmed during onboarding) -->
+            <div id="hero-background-container" class="absolute inset-0 flex flex-col justify-center items-center text-center space-y-4 transition-all duration-700 pointer-events-none z-0">
+              <h1 id="hero-headline" class="text-4xl md:text-5xl font-extrabold text-slate-100 tracking-tight leading-tight max-w-lg">
+                Insurance is confusing.<br><span class="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Mike translates.</span>
+              </h1>
+              <div id="assistant-greeting" class="text-slate-400 text-base font-semibold opacity-75 max-w-md">
+                Hey, Mike here — your policy decoder.
+              </div>
+            </div>
+
+            <!-- Onboarding Instruction Callout (Top Center) -->
+            <div id="onboarding-instruction-container" class="text-center opacity-0 transition-all duration-500 z-50 w-full max-w-lg hidden">
+              <!-- Dark glassmorphism card with border glow and shadow -->
+              <div class="glass-callout p-5 rounded-3xl border border-blue-500/30 shadow-lg shadow-blue-500/5 backdrop-blur-xl">
+                <h2 id="onboarding-instruction-text" class="text-lg md:text-xl font-bold text-white tracking-wide">
+                  Attach your policy to get started
+                </h2>
+              </div>
+            </div>
+
+            <!-- Input area (placeholder, chat-interactive-area will move here on load/reset) -->
+            <div id="landing-input-dock" class="w-full flex flex-col items-center z-50 relative mt-auto mb-auto"></div>
+
+            <!-- Onboarding Tour Card (Bottom) -->
+            <div id="onboarding-tour-card" class="w-full max-w-lg bg-[#0b1023]/90 border border-blue-500/30 rounded-3xl p-5 shadow-2xl z-50 relative hidden opacity-0 transition-all duration-500 flex flex-col space-y-4">
+              <!-- Navigation controls -->
+              <div id="onboarding-controls" class="flex items-center justify-between w-full">
+                <button id="onboarding-prev-btn" onclick="onboardingBack()" class="px-5 py-2 text-sm font-bold text-slate-400 hover:text-white rounded-full bg-slate-800/40 hover:bg-slate-800 transition-all focus:outline-none">
+                  Back
+                </button>
+                
+                <button id="onboarding-skip-btn" onclick="skipOnboarding()" class="text-sm font-bold text-slate-500 hover:text-slate-300 focus:outline-none">
+                  Skip Tour
+                </button>
+
+                <button id="onboarding-next-btn" onclick="onboardingNext()" class="px-6 py-2 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full shadow transition-all focus:outline-none">
+                  Next
+                </button>
+              </div>
+
+              <!-- Divider -->
+              <div class="border-t border-slate-800"></div>
+
+              <!-- Progress Tracker connected pill layout -->
+              <div id="onboarding-progress-tracker" class="w-full grid grid-cols-4 gap-1.5 p-1 bg-slate-950/80 rounded-full border border-white/5">
+                <div class="step-pill text-center py-2 px-1 rounded-full text-[10px] font-bold tracking-tight transition-all duration-300" id="step-lbl-1">Upload Policy</div>
+                <div class="step-pill text-center py-2 px-1 rounded-full text-[10px] font-bold tracking-tight transition-all duration-300" id="step-lbl-2">Ask Questions</div>
+                <div class="step-pill text-center py-2 px-1 rounded-full text-[10px] font-bold tracking-tight transition-all duration-300" id="step-lbl-3">Understand Coverage</div>
+                <div class="step-pill text-center py-2 px-1 rounded-full text-[10px] font-bold tracking-tight transition-all duration-300" id="step-lbl-4">Claim Defense</div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Chat Area (Contains scrollable messages list and interactive area dock, hidden by default) -->
+          <!-- Chat Area (Contains scrollable messages list and interactive area dock, hidden by default) -->
+          <div id="chat-area" class="flex-1 flex flex-col justify-between h-full overflow-hidden hidden">
+            <!-- Chat Scroll Area -->
+            <div id="chat-messages-container" class="flex-1 overflow-y-auto pt-24 pb-4 space-y-5 px-1 relative transition-layout select-text">
+              <div id="messages-list" class="space-y-5"></div>
+            </div>
+            
+            <!-- Chat Input Dock (Analysis mode) -->
+            <div id="chat-input-dock" class="w-full pb-2"></div>
+          </div>
+
+        </div>
+
+        <!-- Right Side: Collapsible Policy Snapshot Panel (Hidden initially) -->
+        <aside id="policy-snapshot-panel" class="side-panel collapsed h-full shrink-0 flex flex-col rounded-3xl shadow-xl overflow-hidden relative z-20">
+          <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+            <h3 class="font-bold text-slate-200 flex items-center">
+              <i data-lucide="file-check-2" class="w-4 h-4 mr-2 text-electric-blue"></i> Policy Snapshot
+            </h3>
+            <button onclick="toggleSnapshot()" class="text-slate-500 hover:text-slate-300 focus:outline-none">
+              <i data-lucide="chevron-right" class="w-5 h-5"></i>
+            </button>
+          </div>
+          <div id="snapshot-content-scroll" class="flex-1 overflow-y-auto p-5 space-y-6">
+            <!-- Dynamic snapshot contents injected here -->
+          </div>
+        </aside>
+
+      </div>
+
+      <!-- ==========================================
+           2. CLAIM DEFENSE VIEW (Coming Soon State)
+           ========================================== -->
+      <div id="view-defense" class="flex-1 flex flex-col justify-center items-center max-w-xl mx-auto h-full text-center hidden transition-layout select-none">
+        <div class="w-20 h-20 bg-blue-950/40 text-electric-blue rounded-3xl flex items-center justify-center mb-6 shadow-md border border-blue-900/50">
+          <i data-lucide="shield-alert" class="w-10 h-10"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-slate-100 mb-2">Claim Defense</h2>
+        <p class="text-slate-400 text-sm mb-6 leading-relaxed max-w-sm">
+          Upload a claim denial letter from your health insurer, and Mike will identify contradictions in the policy exclusions to construct appeal options.
+        </p>
+        <div class="w-full max-w-md border-2 border-dashed border-slate-800 rounded-3xl p-8 bg-slate-900/10 flex flex-col items-center hover:bg-slate-900/20 cursor-not-allowed transition-all">
+          <i data-lucide="file-plus" class="w-8 h-8 text-slate-600 mb-3"></i>
+          <span class="text-xs font-bold text-slate-500 tracking-wide uppercase">Coming Soon</span>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Standalone Interactive Area (moved dynamically between docks) -->
+    <div id="chat-interactive-area" class="w-full max-w-2xl mx-auto flex flex-col items-center shrink-0 z-20 transition-layout px-4">
+      
+      <!-- Question suggestion chips (visible only after Ingest, disappears when active) -->
+      <div id="starter-prompt-chips" class="flex flex-wrap justify-center gap-2 mb-4 opacity-0 scale-95 pointer-events-none transition-all duration-500">
+        <button onclick="submitPrompt('Summarize my policy')" class="px-4 py-1.5 text-xs font-medium text-slate-300 bg-slate-900/60 hover:bg-slate-800 border border-slate-800 rounded-full shadow-sm hover:shadow transition-all focus:outline-none">
+          Summarize policy
+        </button>
+        <button onclick="submitPrompt('What am I covered for?')" class="px-4 py-1.5 text-xs font-medium text-slate-300 bg-slate-900/60 hover:bg-slate-800 border border-slate-800 rounded-full shadow-sm hover:shadow transition-all focus:outline-none">
+          What am I covered for?
+        </button>
+        <button onclick="submitPrompt('Explain exclusions')" class="px-4 py-1.5 text-xs font-medium text-slate-300 bg-slate-900/60 hover:bg-slate-800 border border-slate-800 rounded-full shadow-sm hover:shadow transition-all focus:outline-none">
+          Explain exclusions
+        </button>
+        <button onclick="submitPrompt('Check waiting periods')" class="px-4 py-1.5 text-xs font-medium text-slate-300 bg-slate-900/60 hover:bg-slate-800 border border-slate-800 rounded-full shadow-sm hover:shadow transition-all focus:outline-none">
+          Check waiting periods
+        </button>
+      </div>
+
+      <!-- Input Bar container -->
+      <div id="input-bar-container" class="w-full flex flex-col">
+        
+        <!-- Onboarding cards (visible only during Step 2 of Onboarding) -->
+        <div id="onboarding-cards" class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full mb-6 max-w-3xl mx-auto hidden transition-layout opacity-0 scale-95 duration-500">
+          <button onclick="selectOnboardingCard(0)" class="card-hover p-4 text-left rounded-2xl flex flex-col justify-between h-32 shadow-sm border hover:shadow-lg focus:outline-none">
+            <span class="text-sm font-semibold text-slate-200 leading-tight">Is my knee surgery covered under this policy?</span>
+            <span class="text-xs text-electric-blue flex items-center font-medium">Evaluate coverage scenario <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-1"></i></span>
+          </button>
+          <button onclick="selectOnboardingCard(1)" class="card-hover p-4 text-left rounded-2xl flex flex-col justify-between h-32 shadow-sm border hover:shadow-lg focus:outline-none">
+            <span class="text-sm font-semibold text-slate-200 leading-tight">Summarize my policy in simple terms.</span>
+            <span class="text-xs text-electric-blue flex items-center font-medium">Simplify terms <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-1"></i></span>
+          </button>
+          <button onclick="selectOnboardingCard(2)" class="card-hover p-4 text-left rounded-2xl flex flex-col justify-between h-32 shadow-sm border hover:shadow-lg focus:outline-none">
+            <span class="text-sm font-semibold text-slate-200 leading-tight">Explain this section of my policy in plain English.</span>
+            <span class="text-xs text-electric-blue flex items-center font-medium">Deconstruct legalese <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-1"></i></span>
+          </button>
+          <button onclick="selectOnboardingCard(3)" class="card-hover p-4 text-left rounded-2xl flex flex-col justify-between h-32 shadow-sm border hover:shadow-lg focus:outline-none">
+            <span class="text-sm font-semibold text-slate-200 leading-tight">What are the most important exclusions I should know about?</span>
+            <span class="text-xs text-electric-blue flex items-center font-medium">Check exclusions <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-1"></i></span>
+          </button>
+        </div>
+
+        <!-- Input text box & upload control -->
+        <div id="chat-input-wrapper" class="glass-input p-2 rounded-3xl flex items-center shadow-lg border relative transition-layout w-full">
+          <!-- Ingestion Upload Button - Embedded INSIDE the input wrapper on the left -->
+          <button id="upload-btn" onclick="triggerFileUpload()" class="p-2.5 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded-2xl transition-colors focus:outline-none flex items-center justify-center shrink-0 ml-1">
+            <i data-lucide="plus" class="w-5 h-5"></i>
+          </button>
+          <input type="file" id="file-uploader" accept=".pdf" class="hidden" onchange="handleFileSelected(event)">
+
+          <textarea id="chat-input" rows="1" placeholder="Ask Mike anything..." class="flex-1 bg-transparent px-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none resize-none leading-relaxed self-center max-h-32" onkeydown="handleInputKeydown(event)"></textarea>
+
+          <!-- Send Button -->
+          <button id="send-btn" onclick="sendMessage()" class="p-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-2xl transition-all focus:outline-none flex items-center justify-center shrink-0 mr-1 shadow-sm">
+            <i data-lucide="send" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- Uploading progress states -->
+        <div id="upload-status" class="w-full flex items-center space-x-3 px-4 mt-2 hidden">
+          <div class="w-full bg-slate-900 rounded-full h-1 overflow-hidden">
+            <div id="upload-progress-bar" class="bg-gradient-to-r from-blue-500 to-purple-500 h-full rounded-full transition-all duration-300 w-0"></div>
+          </div>
+          <span id="upload-progress-text" class="text-xs font-semibold text-slate-400 shrink-0">0%</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Onboarding Backdrop Blur Overlay -->
+  <div id="onboarding-backdrop-blur" class="fixed inset-0 z-35 bg-[#050816]/50 backdrop-blur-md transition-opacity duration-500 hidden opacity-0 pointer-events-auto"></div>
+
+  <!-- Onboarding Spotlight SVG Mask Overlay -->
+  <svg id="spotlight-overlay" class="fixed inset-0 w-full h-full pointer-events-none z-40 transition-opacity duration-500 hidden select-none">
+    <defs>
+      <mask id="spotlight-mask">
+        <!-- Full cover white overlay = dims the screen -->
+        <rect width="100%" height="100%" fill="white"></rect>
+        <!-- Black rounded rectangle = transparent hole for spotlight -->
+        <rect id="spotlight-hole" fill="black" rx="16" ry="16" x="0" y="0" width="0" height="0"></rect>
+      </mask>
+    </defs>
+    <!-- Background overlay linked to mask -->
+    <rect width="100%" height="100%" fill="rgba(5, 8, 22, 0.7)" mask="url(#spotlight-mask)" class="pointer-events-auto"></rect>
+  </svg>
+
+  <!-- Hand-drawn Annotation Overlay Layer -->
+  <svg id="annotation-layer" class="fixed inset-0 w-full h-full pointer-events-none z-45 hidden select-none">
+    <defs>
+      <linearGradient id="blue-purple-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#2563EB" />
+        <stop offset="100%" stop-color="#8B5CF6" />
+      </linearGradient>
+      <!-- Soft glow filter for the circle -->
+      <filter id="glow-filter" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="6" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+    <!-- Sketched Arrow pointing from instruction text to "+" button -->
+    <path id="annotation-arrow" d="" fill="none" stroke="url(#blue-purple-grad)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="1000" stroke-dashoffset="1000" />
+    <path id="annotation-arrow-head" d="" fill="none" stroke="url(#blue-purple-grad)" stroke-width="2.5" stroke-linecap="round" />
+    <!-- Sketched Circle around the upload button -->
+    <path id="annotation-circle" d="" fill="none" stroke="url(#blue-purple-grad)" stroke-width="2.5" stroke-linecap="round" filter="url(#glow-filter)" stroke-dasharray="1000" stroke-dashoffset="1000" />
+  </svg>
+
+  <!-- Floating Help Button to Restart Tour -->
+  <div class="fixed bottom-6 right-6 z-30">
+    <button onclick="startOnboarding()" class="p-3 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white rounded-full shadow-lg border border-slate-800/80 transition-all focus:outline-none flex items-center justify-center group" title="Take a tour">
+      <i data-lucide="help-circle" class="w-5 h-5"></i>
+      <span class="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 ease-in-out text-xs font-semibold text-slate-300 whitespace-nowrap pl-0 group-hover:pl-2">
+        Show Tour
+      </span>
+    </button>
+  </div>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Main Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
