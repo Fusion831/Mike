@@ -55,16 +55,21 @@ class CoverageExclusion(BaseModel):
 
 
 class ScenarioExample(BaseModel):
-    scenario: str = Field(description="e.g., 'Broken Arm (ER Visit + X-Rays)', 'Normal Pregnancy', '3-Day Hospital Stay'")
-    estimated_user_cost: str = Field(description="Calculate the estimated cost based on the deductible, copay, and coinsurance rules.")
-    explanation: str = Field(description="Step-by-step math. E.g., 'You pay the $500 ER copay + 20% coinsurance for the X-Rays. Assuming a $3,000 bill, you will pay around $1,000 total.'")
-
+    scenario: str
+    estimated_user_cost: str
+    assumptions: List[str]
+    explanation: str
 
 class DenialRisk(BaseModel):
     risk: str = Field(description="e.g., 'Missing a Filing Deadline', 'Using an Out-of-Network Anesthesiologist'")
     explanation: str = Field(description="How this trap typically happens based on the policy text.")
     prevention_tip: str = Field(description="Actionable advice for the user to prevent this denial.")
-    citation: str = Field(description="Exact section/page number")
+    citation: str = Field(
+    description="""
+    Exact markdown heading or section title where this information appears.
+    If unavailable, return 'Citation unavailable in source text'
+    """
+    )
 
 
 class PolicySummary(BaseModel):
@@ -73,7 +78,7 @@ class PolicySummary(BaseModel):
     routine_care: RoutineCare
     emergency_care: EmergencyScenarios
     drug_tiers: List[DrugTier] = Field(description="Extract all prescription drug tiers mentioned.")
-    prior_authorization_requirements: List[PriorAuthorizationItem] = Field(description="List at least 5 common services that strictly require prior authorization.")
-    excluded_services: List[CoverageExclusion] = Field(description="List at least 5 major exclusions where the insurer flat-out refuses to pay.")
+    prior_authorization_requirements: List[PriorAuthorizationItem] = Field(description="Extract every explicit prior authorization requirement found.")
+    excluded_services: List[CoverageExclusion] = Field(description="Extract every explicit exclusion found.")
     example_scenarios: List[ScenarioExample] = Field(description="Create 3 relatable medical scenarios (e.g., broken bone, hospital stay, chronic illness) and estimate the cost.")
     denial_risks: List[DenialRisk] = Field(description="Identify 3 to 5 strict rules that will result in an automatic claim denial if not followed.")
