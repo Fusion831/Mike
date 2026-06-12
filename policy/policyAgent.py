@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 import os
 from models import PolicySummary
 import getpass
+from typing import Any
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -11,7 +12,7 @@ if "GOOGLE_API_KEY" not in os.environ:
     os.environ["GOOGLE_API_KEY"] = getpass.getpass("Enter your Google AI API key: ")
     
 
-async def generate_policy(markdownText: str) -> Dict:
+async def generate_policy(markdownText: str) -> Any:
     llm = ChatGoogleGenerativeAI(
         model = "gemini-2.5-flash",
         temperature = 0.2,
