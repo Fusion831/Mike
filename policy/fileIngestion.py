@@ -6,7 +6,7 @@ from langchain_core.documents import Document
 
 
 
-async def parse_markdown(source):
+async def parse_markdown(source : str) -> str:
     converter = DocumentConverter()
     doc = converter.convert(source).document
     data = doc.export_to_markdown()
