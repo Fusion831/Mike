@@ -1,43 +1,79 @@
 from pydantic import BaseModel, Field
 from typing import List
 
+
 class PlanOverview(BaseModel):
-    insurer_name: str = Field(description="Name of the insurance company")
-    plan_name: str = Field(description="Name or type of the plan (e.g., Bronze, Silver, HMO, PPO)")
-    mikes_eli5_summary: str = Field(description="A detailed, 3-to-4 sentence 'Explain Like I'm 5' summary. Break down how this specific plan functions, who it is best for, and the biggest financial risk the user carries.")
-    network_rules: str = Field(description="Detailed explanation of the network rules. E.g., 'This is an HMO. You must stay in-network. Out-of-network care is 100% your financial responsibility unless it is a life-threatening emergency.'")
+    insurer_name: str
+    plan_name: str
+    mikes_eli5_summary: str = Field(description="A 3-sentence 'Explain Like I'm 5' summary. Break down how this plan functions, who it is best for, and the biggest financial risk.")
+    network_rules: str = Field(description="Explanation of network rules. E.g., 'This is an HMO. You must stay in-network.'")
+    specialist_referral_required: bool = Field(description="True if the user MUST get a PCP referral to see a specialist.")
+    referral_details: str = Field(description="Specific rules about getting referrals, or 'No referral needed' if false.")
+
 
 class FinancialDetail(BaseModel):
-    amount: str = Field(description="The exact monetary amount (e.g., $2,500)")
-    nuance: str = Field(description="Crucial context. Does this apply per person or per family? Are prescription drugs included in this amount, or do they have a separate deductible?")
+    amount: str
+    nuance: str = Field(description="Crucial context (e.g., 'Applies per family', 'Does not apply to prescription drugs').")
 
 class Financials(BaseModel):
     in_network_deductible: FinancialDetail
+    out_of_network_deductible: FinancialDetail
     out_of_pocket_max: FinancialDetail
 
+
 class CareCost(BaseModel):
-    cost: str = Field(description="The copay or coinsurance (e.g., '$50' or '20%')")
-    conditions: str = Field(description="Conditions attached to this cost. E.g., 'Only applies AFTER deductible is met', 'Waived for the first 3 visits', or 'Requires Prior Authorization'.")
+    cost: str
+    conditions: str = Field(description="e.g., 'Only applies AFTER deductible is met', or 'Waived for first 3 visits'.")
 
 class RoutineCare(BaseModel):
     preventive_care: CareCost
     primary_care: CareCost
     specialist: CareCost
-    prescription_drugs: CareCost = Field(description="Provide details on generic vs. brand name tiers if available.")
 
 class EmergencyScenarios(BaseModel):
     emergency_room: CareCost
     ambulance: CareCost
     urgent_care: CareCost
 
-class MikeAlert(BaseModel):
-    alert_title: str = Field(description="A punchy title for the warning (e.g., 'Severe Ambulance Penalty', 'Strict Referral Rule')")
-    description: str = Field(description="A detailed explanation of the trap, rule, or exclusion.")
-    citation: str = Field(description="The exact section or page number where this rule is found so the user can verify it.")
+
+class DrugTier(BaseModel):
+    tier_name: str = Field(description="e.g., 'Tier 1 Generic', 'Preferred Brand', 'Specialty'")
+    cost: str = Field(description="Copay or coinsurance")
+    notes: str = Field(description="Specific rules (e.g., 'Requires step therapy', 'Limited to 30-day supply')")
+
+
+class PriorAuthorizationItem(BaseModel):
+    service: str = Field(description="e.g., MRI, CT Scan, Physical Therapy, Bariatric Surgery")
+    details: str = Field(description="What are the specific requirements to get this approved?")
+    citation: str = Field(description="Exact section/page number")
+
+
+class CoverageExclusion(BaseModel):
+    exclusion: str = Field(description="e.g., Cosmetic surgery, Adult dental, Experimental treatments")
+    explanation: str = Field(description="Why is it excluded or are there any rare exceptions?")
+    citation: str = Field(description="Exact section/page number")
+
+
+class ScenarioExample(BaseModel):
+    scenario: str = Field(description="e.g., 'Broken Arm (ER Visit + X-Rays)', 'Normal Pregnancy', '3-Day Hospital Stay'")
+    estimated_user_cost: str = Field(description="Calculate the estimated cost based on the deductible, copay, and coinsurance rules.")
+    explanation: str = Field(description="Step-by-step math. E.g., 'You pay the $500 ER copay + 20% coinsurance for the X-Rays. Assuming a $3,000 bill, you will pay around $1,000 total.'")
+
+
+class DenialRisk(BaseModel):
+    risk: str = Field(description="e.g., 'Missing a Filing Deadline', 'Using an Out-of-Network Anesthesiologist'")
+    explanation: str = Field(description="How this trap typically happens based on the policy text.")
+    prevention_tip: str = Field(description="Actionable advice for the user to prevent this denial.")
+    citation: str = Field(description="Exact section/page number")
+
 
 class PolicySummary(BaseModel):
     overview: PlanOverview
     financials: Financials
     routine_care: RoutineCare
-    emergency_scenarios: EmergencyScenarios
-    mike_alerts: List[MikeAlert] = Field(description="Extract 3 to 5 of the most dangerous hidden traps, strict rules (like prior auth), or severe exclusions found in the document.")
+    emergency_care: EmergencyScenarios
+    drug_tiers: List[DrugTier] = Field(description="Extract all prescription drug tiers mentioned.")
+    prior_authorization_requirements: List[PriorAuthorizationItem] = Field(description="List at least 5 common services that strictly require prior authorization.")
+    excluded_services: List[CoverageExclusion] = Field(description="List at least 5 major exclusions where the insurer flat-out refuses to pay.")
+    example_scenarios: List[ScenarioExample] = Field(description="Create 3 relatable medical scenarios (e.g., broken bone, hospital stay, chronic illness) and estimate the cost.")
+    denial_risks: List[DenialRisk] = Field(description="Identify 3 to 5 strict rules that will result in an automatic claim denial if not followed.")
