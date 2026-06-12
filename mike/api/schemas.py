@@ -27,3 +27,22 @@ class CoverageEvaluationResponse(BaseModel):
     confidence: dict[str, Any]
     citations: list[dict[str, Any]]
     audit_ref: dict[str, Any]
+
+
+class PolicyIngestionResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    policy_id: str
+    version: str
+    filename: str
+    ingested_at: str
+    markdown_chunk_count: int
+    total_chunk_count: int
+    summary_generated: bool
+
+
+class PolicyPathIngestionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    file_path: str = Field(min_length=1)
+    policy_version: str = Field(default="v1", min_length=1)

@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Header, HTTPException
 
-from mike.api.dependencies import container, seed_demo_policy
+from mike.api.dependencies import container
 from mike.api.schemas import CoverageEvaluationResponse, CoverageQuestionInput
 from mike.domain.models import CoverageQuestion
 
@@ -23,9 +23,6 @@ def create_coverage_evaluation(
     x_user_id: UUID | None = Header(default=None),
 ) -> CoverageEvaluationResponse:
     user_id = x_user_id or UUID("00000000-0000-0000-0000-000000000001")
-
-    # Demo bootstrap for local development. Replace with real policy lifecycle logic.
-    seed_demo_policy(policy_id)
 
     question = CoverageQuestion(
         user_id=user_id,

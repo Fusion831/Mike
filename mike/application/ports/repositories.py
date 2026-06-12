@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from datetime import date
+from typing import Any
 from uuid import UUID
 
 from mike.domain.models import (
@@ -20,6 +21,20 @@ class PolicyRepositoryPort(ABC):
     def get_effective_policy_version(self, policy_id: UUID, on_date: date | None = None) -> PolicyVersionRef:
         raise NotImplementedError
 
+    @abstractmethod
+    def register_policy_document(
+        self,
+        policy_id: UUID,
+        version: str,
+        filename: str,
+        summary: dict[str, Any] | None,
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_policy_summary(self, policy_id: UUID) -> dict[str, Any] | None:
+        raise NotImplementedError
+
 
 class PolicyChunkRepositoryPort(ABC):
     @abstractmethod
@@ -30,6 +45,10 @@ class PolicyChunkRepositoryPort(ABC):
         query_text: str,
         top_k: int,
     ) -> list[RetrievedPolicyChunk]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def upsert_chunks(self, policy_id: UUID, chunks: list[RetrievedPolicyChunk]) -> None:
         raise NotImplementedError
 
 

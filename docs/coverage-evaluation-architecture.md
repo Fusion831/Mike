@@ -38,6 +38,15 @@ Layers:
 11. `AuditRepositoryPort` stores retrieval/LLM traces.
 12. API returns answer, reasoning, risks, confidence, and citations.
 
+### Policy ingestion pipeline
+1. Client uploads policy PDF.
+2. API invokes `PolicyIngestionService`.
+3. Parsing adapter converts PDF to markdown and header chunks.
+4. Policy summary adapter generates structured `PolicySummary` output.
+5. Service stores policy version metadata and all chunks.
+6. Service also stores a summary-derived chunk to improve retrieval recall.
+7. Coverage evaluation then retrieves from these stored chunks.
+
 ### Insufficient evidence branch
 1. Evidence package has empty/weak relevant chunks.
 2. Reasoning adapter emits `cannot_determine_from_policy`.
@@ -69,6 +78,7 @@ Supporting models:
 Application services:
 - `CoverageEvaluationService`: orchestrates complete workflow.
 - `PolicyAccessService`: policy authorization and version resolution.
+- `PolicyIngestionService`: document parse + summary generation + chunk registration.
 - `EvidenceAssemblerService`: evidence package construction.
 - `CitationValidatorService`: claim/citation traceability validation.
 - `ConfidenceService`: deterministic confidence assignment.
@@ -76,6 +86,7 @@ Application services:
 Ports:
 - Retrieval: `RetrievalPort`, `RerankPort`
 - LLM: `CoverageReasoningPort`
+- Policy parser: `PolicyParserPort`
 - Repositories: policy/chunks/evaluations/audit ports
 
 ## 5. Repository Interfaces
@@ -112,6 +123,15 @@ Returns full stored `CoverageEvaluation` payload.
 ### GET /v1/coverage/evaluations/{evaluation_id}/trace
 Returns retrieval and LLM trace payloads for audit.
 
+### POST /v1/policies/{policy_id}/ingest
+Uploads a policy PDF, parses markdown, generates policy summary, and stores chunks.
+
+### POST /v1/policies/{policy_id}/ingest-from-path
+Registers a preuploaded PDF from the server `documents/` directory.
+
+### GET /v1/policies/{policy_id}/summary
+Returns stored structured policy summary.
+
 ## 7. Folder Structure
 
 ```
@@ -121,14 +141,17 @@ mike/
     schemas.py
     routers/
       coverage_evaluation_router.py
+      policy_ingestion_router.py
   application/
     ports/
       repositories.py
       retrieval_port.py
       llm_reasoning_port.py
+      policy_parser_port.py
     services/
       coverage_evaluation_service.py
       policy_access_service.py
+      policy_ingestion_service.py
       evidence_assembler_service.py
       citation_validator_service.py
       confidence_service.py
@@ -136,6 +159,8 @@ mike/
     enums.py
     models.py
   infrastructure/
+    parsing/
+      policy_parser_adapter.py
     llm/
       gemini_coverage_reasoning_adapter.py
     retrieval/

@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 import os
-from models import PolicySummary
+from policy.models import PolicySummary
 import getpass
 from typing import Any
 from langchain_google_genai import ChatGoogleGenerativeAI

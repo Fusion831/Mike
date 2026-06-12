@@ -14,6 +14,9 @@ class LocalPolicyChunkRepository(PolicyChunkRepositoryPort):
     def seed_chunks(self, policy_id: UUID, chunks: list[RetrievedPolicyChunk]) -> None:
         self._chunks[policy_id] = chunks
 
+    def upsert_chunks(self, policy_id: UUID, chunks: list[RetrievedPolicyChunk]) -> None:
+        self._chunks[policy_id] = chunks
+
     def search_chunks(
         self,
         policy_id: UUID,

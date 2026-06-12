@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from uuid import UUID
-
 from mike.application.services.citation_validator_service import CitationValidatorService
 from mike.application.services.confidence_service import ConfidenceService
 from mike.application.services.coverage_evaluation_service import CoverageEvaluationService
 from mike.application.services.evidence_assembler_service import EvidenceAssemblerService
+from mike.application.services.policy_ingestion_service import PolicyIngestionService
 from mike.application.services.policy_access_service import PolicyAccessService
+from mike.infrastructure.parsing.policy_parser_adapter import PolicyParserAdapter
 from mike.infrastructure.llm.gemini_coverage_reasoning_adapter import GeminiCoverageReasoningAdapter
 from mike.infrastructure.repositories.in_memory_audit_repository import InMemoryAuditRepository
 from mike.infrastructure.repositories.in_memory_coverage_evaluation_repository import (
@@ -24,8 +24,14 @@ class Container:
         self.chunk_repository = LocalPolicyChunkRepository()
         self.evaluation_repository = InMemoryCoverageEvaluationRepository()
         self.audit_repository = InMemoryAuditRepository()
+        self.policy_parser_adapter = PolicyParserAdapter()
 
         self.policy_access_service = PolicyAccessService(self.policy_repository)
+        self.policy_ingestion_service = PolicyIngestionService(
+            policy_repository=self.policy_repository,
+            chunk_repository=self.chunk_repository,
+            parser_adapter=self.policy_parser_adapter,
+        )
         self.retrieval_adapter = QdrantRetrievalAdapter(self.chunk_repository)
         self.rerank_adapter = SimpleRerankAdapter()
         self.evidence_assembler = EvidenceAssemblerService()
@@ -47,11 +53,3 @@ class Container:
 
 
 container = Container()
-
-
-def seed_demo_policy(policy_id: UUID) -> None:
-    """
-    Seeds one policy version; chunk ingestion remains a separate ingestion pipeline.
-    This keeps the evaluation API usable while preserving clean boundaries.
-    """
-    container.policy_repository.seed_policy(policy_id=policy_id, version="v1")
