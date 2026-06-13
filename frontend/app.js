@@ -5,6 +5,7 @@ let isAnalysisMode = false;
 let policyId = null;
 let policyName = '';
 let isSnapshotOpen = false;
+let currentAppState = 'home';
 
 // Simulated Mock Data for offline testing
 const mockPolicySummary = {
@@ -157,15 +158,11 @@ function adjustInputDock() {
     if (chatDock && interactiveArea) {
       chatDock.appendChild(interactiveArea);
     }
-    document.getElementById('landing-container').classList.add('hidden');
-    document.getElementById('chat-area').classList.remove('hidden');
   } else {
     const landingDock = document.getElementById('landing-input-dock');
     if (landingDock && interactiveArea) {
       landingDock.appendChild(interactiveArea);
     }
-    document.getElementById('landing-container').classList.remove('hidden');
-    document.getElementById('chat-area').classList.add('hidden');
   }
 }
 
@@ -254,6 +251,10 @@ function updateSpotlight() {
       setTimeout(() => {
         onboardingCards.style.opacity = '1';
         onboardingCards.style.transform = 'scale(1)';
+        const cards = onboardingCards.querySelectorAll('button');
+        if (cards && cards.length > 0) {
+          cards[0].focus();
+        }
       }, 50);
     } else {
       onboardingCards.classList.add('hidden');
@@ -685,31 +686,148 @@ function finishOnboarding() {
 
 // Workspace Swapper
 function setWorkspace(type) {
-  currentWorkspace = type;
-  const ind = document.getElementById('segmented-indicator');
+  if (type === 'home') {
+    transitionToState('home');
+  } else {
+    transitionToState('defense');
+  }
+}
+
+function transitionToState(newState) {
+  const prevState = currentAppState;
+  currentAppState = newState;
+  
+  console.log(`Transitioning state: ${prevState} -> ${newState}`);
+  
+  const navIndicator = document.getElementById('segmented-indicator');
   const btnHome = document.getElementById('tab-home');
   const btnDefense = document.getElementById('tab-defense');
   
   const viewHome = document.getElementById('view-home');
   const viewDefense = document.getElementById('view-defense');
-
-  if (type === 'home') {
-    ind.style.transform = 'translateX(0)';
-    btnHome.className = "relative z-10 flex-1 py-1.5 text-center text-sm font-bold text-primary transition-colors focus:outline-none";
-    btnDefense.className = "relative z-10 flex-1 py-1.5 text-center text-sm font-medium text-slate-500 transition-colors focus:outline-none";
-    
-    viewHome.classList.remove('hidden');
-    viewDefense.classList.add('hidden');
+  const landingContainer = document.getElementById('landing-container');
+  const chatArea = document.getElementById('chat-area');
+  const policyCard = document.getElementById('policy-card-container');
+  const starterChips = document.getElementById('starter-prompt-chips');
+  
+  // Tabs highlight updating
+  if (newState === 'defense') {
+    if (navIndicator) navIndicator.style.transform = 'translateX(100%)';
+    if (btnHome) btnHome.className = "relative z-10 flex-1 py-1.5 text-center text-sm font-medium text-slate-500 transition-colors focus:outline-none";
+    if (btnDefense) btnDefense.className = "relative z-10 flex-1 py-1.5 text-center text-sm font-bold text-primary transition-colors focus:outline-none";
   } else {
-    ind.style.transform = 'translateX(100%)';
-    btnHome.className = "relative z-10 flex-1 py-1.5 text-center text-sm font-medium text-slate-500 transition-colors focus:outline-none";
-    btnDefense.className = "relative z-10 flex-1 py-1.5 text-center text-sm font-bold text-primary transition-colors focus:outline-none";
-    
-    viewHome.classList.add('hidden');
-    viewDefense.classList.remove('hidden');
+    if (navIndicator) navIndicator.style.transform = 'translateX(0)';
+    if (btnHome) btnHome.className = "relative z-10 flex-1 py-1.5 text-center text-sm font-bold text-primary transition-colors focus:outline-none";
+    if (btnDefense) btnDefense.className = "relative z-10 flex-1 py-1.5 text-center text-sm font-medium text-slate-500 transition-colors focus:outline-none";
   }
   
-  adjustInputDock();
+  // Local fade out helper using css transitions
+  function fadeOut(el, duration = 200) {
+    if (!el || el.classList.contains('hidden')) return Promise.resolve();
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(8px)';
+    return new Promise(resolve => {
+      setTimeout(() => {
+        el.classList.add('hidden');
+        resolve();
+      }, duration);
+    });
+  }
+  
+  // Local fade in helper
+  function fadeIn(el) {
+    if (!el) return;
+    el.classList.remove('hidden');
+    void el.offsetWidth;
+    el.style.opacity = '1';
+    el.style.transform = 'translateY(0)';
+  }
+  
+  if (newState === 'defense') {
+    fadeOut(viewHome, 200).then(() => {
+      fadeIn(viewDefense);
+    });
+  } else if (newState === 'home') {
+    const hidePromises = [];
+    if (viewDefense && !viewDefense.classList.contains('hidden')) {
+      hidePromises.push(fadeOut(viewDefense, 200));
+    }
+    if (chatArea && !chatArea.classList.contains('hidden')) {
+      hidePromises.push(fadeOut(chatArea, 200));
+    }
+    
+    Promise.all(hidePromises).then(() => {
+      if (viewHome && viewHome.classList.contains('hidden')) {
+        viewHome.classList.remove('hidden');
+        void viewHome.offsetWidth;
+      }
+      
+      isAnalysisMode = false;
+      adjustInputDock();
+      toggleSnapshot(false);
+      
+      if (policyId) {
+        if (policyCard) {
+          policyCard.classList.remove('pointer-events-none');
+          policyCard.style.opacity = '1';
+          policyCard.style.transform = 'translateY(0)';
+        }
+        if (starterChips) {
+          starterChips.classList.remove('hidden', 'pointer-events-none');
+          void starterChips.offsetWidth;
+          starterChips.style.opacity = '1';
+          starterChips.style.transform = 'scale(1)';
+        }
+      } else {
+        if (policyCard) {
+          policyCard.style.opacity = '0';
+          policyCard.style.transform = 'translateY(-16px)';
+          policyCard.classList.add('pointer-events-none');
+        }
+        if (starterChips) {
+          starterChips.style.opacity = '0';
+          starterChips.style.transform = 'scale(0.95)';
+          starterChips.classList.add('pointer-events-none');
+        }
+      }
+      
+      fadeIn(landingContainer);
+    });
+  } else if (newState === 'conversation') {
+    const hidePromises = [];
+    if (viewDefense && !viewDefense.classList.contains('hidden')) {
+      hidePromises.push(fadeOut(viewDefense, 200));
+    }
+    if (landingContainer && !landingContainer.classList.contains('hidden')) {
+      hidePromises.push(fadeOut(landingContainer, 200));
+    }
+    
+    Promise.all(hidePromises).then(() => {
+      if (viewHome && viewHome.classList.contains('hidden')) {
+        viewHome.classList.remove('hidden');
+        void viewHome.offsetWidth;
+      }
+      
+      isAnalysisMode = true;
+      adjustInputDock();
+      
+      if (starterChips) {
+        starterChips.classList.add('hidden', 'pointer-events-none');
+        starterChips.style.opacity = '0';
+      }
+      
+      toggleSnapshot(true);
+      
+      if (policyCard) {
+        policyCard.classList.remove('pointer-events-none');
+        policyCard.style.opacity = '1';
+        policyCard.style.transform = 'translateY(0)';
+      }
+      
+      fadeIn(chatArea);
+      scrollChatToBottom();
+    });
+  }
 }
 
 // Upload Policy Flow
@@ -800,39 +918,16 @@ function uploadPolicy(file) {
 
 // Transition from Onboarding to Analysis mode layout
 function transitionToAnalysisMode(summary = null) {
-  isAnalysisMode = true;
   const activeSummary = summary || mockPolicySummary.summary;
   
-  // 1. Slow and calm down gradient background
-  document.getElementById('app-bg').classList.add('analysis-mode');
+  const bg = document.getElementById('app-bg');
+  if (bg) bg.classList.add('analysis-mode');
   
-  // 2. Hide Hero landing message
-  document.getElementById('landing-container').classList.add('opacity-0');
+  const cardName = document.getElementById('policy-card-name');
+  if (cardName) cardName.innerText = policyName;
   
-  // 3. Move input bar bottom-anchored
-  adjustInputDock();
-  
-  setTimeout(() => {
-    document.getElementById('landing-container').classList.add('hidden');
-    
-    // 4. Slide-in Policy Status Card
-    const policyCard = document.getElementById('policy-card-container');
-    document.getElementById('policy-card-name').innerText = policyName;
-    policyCard.classList.remove('pointer-events-none');
-    policyCard.style.opacity = '1';
-    policyCard.style.transform = 'translateY(0)';
-    
-    // 5. Build and populate Policy Snapshot panel contents
-    populatePolicySnapshot(activeSummary);
-    toggleSnapshot(true); // Open snapshot panel
-    
-    // 6. Fade-in starter prompts chips
-    const chips = document.getElementById('starter-prompt-chips');
-    chips.classList.remove('pointer-events-none');
-    chips.style.opacity = '1';
-    chips.style.transform = 'scale(1)';
-    
-  }, 900);
+  populatePolicySnapshot(activeSummary);
+  transitionToState('home');
 }
 
 function populatePolicySnapshot(summary) {
@@ -968,8 +1063,15 @@ function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
   
+  if (currentAppState !== 'conversation') {
+    transitionToState('conversation');
+  }
+  
   // Clear starter prompts chips
-  document.getElementById('starter-prompt-chips').classList.add('hidden');
+  const chips = document.getElementById('starter-prompt-chips');
+  if (chips) {
+    chips.classList.add('hidden');
+  }
   
   // Add User Message
   appendChatMessage(text, 'user');
@@ -1205,3 +1307,61 @@ function uuidv4() {
     (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
   );
 }
+
+// Global keyboard arrow key navigation for accessibility
+window.addEventListener('keydown', (e) => {
+  const activeEl = document.activeElement;
+  if (!activeEl) return;
+  
+  const onboardingContainer = document.getElementById('onboarding-cards');
+  const onboardingCards = onboardingContainer ? Array.from(onboardingContainer.querySelectorAll('button')) : [];
+  const onboardingIndex = onboardingCards.indexOf(activeEl);
+  
+  const chipsContainer = document.getElementById('starter-prompt-chips');
+  const promptChips = chipsContainer ? Array.from(chipsContainer.querySelectorAll('button')) : [];
+  const chipIndex = promptChips.indexOf(activeEl);
+  
+  if (onboardingIndex !== -1) {
+    let nextIndex = onboardingIndex;
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      if (onboardingIndex === 0) nextIndex = 1;
+      else if (onboardingIndex === 2) nextIndex = 3;
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      if (onboardingIndex === 1) nextIndex = 0;
+      else if (onboardingIndex === 3) nextIndex = 2;
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (onboardingIndex === 0) nextIndex = 2;
+      else if (onboardingIndex === 1) nextIndex = 3;
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (onboardingIndex === 2) nextIndex = 0;
+      else if (onboardingIndex === 3) nextIndex = 1;
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      selectOnboardingCard(onboardingIndex);
+    }
+    
+    if (nextIndex !== onboardingIndex && onboardingCards[nextIndex]) {
+      onboardingCards[nextIndex].focus();
+    }
+  } else if (chipIndex !== -1) {
+    let nextIndex = chipIndex;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      nextIndex = (chipIndex + 1) % promptChips.length;
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      nextIndex = (chipIndex - 1 + promptChips.length) % promptChips.length;
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      activeEl.click();
+    }
+    
+    if (nextIndex !== chipIndex && promptChips[nextIndex]) {
+      promptChips[nextIndex].focus();
+    }
+  }
+});

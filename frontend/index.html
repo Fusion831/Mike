@@ -82,7 +82,7 @@
           </div>
 
           <!-- Hero Landing / Onboarding State (Visible by default in Landing mode) -->
-          <div id="landing-container" class="flex-1 flex flex-col justify-center items-center py-6 max-w-2xl mx-auto w-full transition-layout select-none relative space-y-6">
+          <div id="landing-container" class="flex-1 flex flex-col justify-center items-center py-6 max-w-2xl mx-auto w-full transition-layout state-transition-target select-none relative space-y-6">
             
             <!-- Background Hero (will be blurred and dimmed during onboarding) -->
             <div id="hero-background-container" class="flex flex-col justify-center items-center text-center space-y-4 transition-all duration-700 w-full z-10">
@@ -101,7 +101,7 @@
 
           <!-- Chat Area (Contains scrollable messages list and interactive area dock, hidden by default) -->
           <!-- Chat Area (Contains scrollable messages list and interactive area dock, hidden by default) -->
-          <div id="chat-area" class="flex-1 flex flex-col justify-between h-full overflow-hidden hidden">
+          <div id="chat-area" class="flex-1 flex flex-col justify-between h-full overflow-hidden hidden state-transition-target">
             <!-- Chat Scroll Area -->
             <div id="chat-messages-container" class="flex-1 overflow-y-auto pt-24 pb-4 space-y-5 px-1 relative transition-layout select-text">
               <div id="messages-list" class="space-y-5"></div>
@@ -133,7 +133,7 @@
       <!-- ==========================================
            2. CLAIM DEFENSE VIEW (Coming Soon State)
            ========================================== -->
-      <div id="view-defense" class="flex-1 flex flex-col justify-center items-center max-w-xl mx-auto h-full text-center hidden transition-layout select-none">
+      <div id="view-defense" class="flex-1 flex flex-col justify-center items-center max-w-xl mx-auto h-full text-center hidden transition-layout state-transition-target select-none">
         <div class="w-20 h-20 bg-blue-950/40 text-electric-blue rounded-3xl flex items-center justify-center mb-6 shadow-md border border-blue-900/50">
           <i data-lucide="shield-alert" class="w-10 h-10"></i>
         </div>
