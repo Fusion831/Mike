@@ -189,6 +189,7 @@ function checkOnboardingStatus() {
 function startOnboarding() {
   currentStep = 1;
   isAnalysisMode = false;
+  setWorkspace('home');
   adjustInputDock();
   
   // Ensure overlays are resized correctly relative to the current viewport
@@ -342,6 +343,29 @@ function updateSpotlightCoords() {
   }
 }
 
+// Calculate dynamic, mathematically correct arrowhead paths aligned to the curve's end tangent
+function calculateArrowHead(cp2X, cp2Y, endX, endY, length = 12, angleDeg = 30) {
+  const dx = endX - cp2X;
+  const dy = endY - cp2Y;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if (len === 0) return '';
+  
+  const udx = dx / len;
+  const udy = dy / len;
+  
+  const angleRad = (angleDeg * Math.PI) / 180;
+  const backX = -udx;
+  const backY = -udy;
+  
+  const leftX = endX + length * (backX * Math.cos(angleRad) - backY * Math.sin(angleRad));
+  const leftY = endY + length * (backX * Math.sin(angleRad) + backY * Math.cos(angleRad));
+  
+  const rightX = endX + length * (backX * Math.cos(-angleRad) - backY * Math.sin(-angleRad));
+  const rightY = endY + length * (backX * Math.sin(-angleRad) + backY * Math.cos(-angleRad));
+  
+  return `M ${leftX} ${leftY} L ${endX} ${endY} L ${rightX} ${rightY}`;
+}
+
 // Mathematical calculation for the sketchy circle and arrow points
 function drawHanddrawnCircleAndArrow(btnRect) {
   const layer = document.getElementById('annotation-layer');
@@ -392,12 +416,24 @@ function drawHanddrawnCircleAndArrow(btnRect) {
     circle.style.strokeDashoffset = '1000';
     arrow.style.strokeDashoffset = '1000';
     
+    arrowHead.style.transition = 'none';
+    arrowHead.style.opacity = '0';
+    
     setTimeout(() => {
       circle.style.transition = 'stroke-dashoffset 800ms ease-in-out';
       arrow.style.transition = 'stroke-dashoffset 600ms ease-in-out';
       circle.style.strokeDashoffset = '0';
       arrow.style.strokeDashoffset = '0';
+      
+      // Animate arrowhead fade-in once the arrow line reaches the target
+      setTimeout(() => {
+        arrowHead.style.transition = 'opacity 250ms ease-in-out';
+        arrowHead.style.opacity = '1';
+      }, 500);
     }, 50);
+  } else {
+    arrowHead.style.transition = 'none';
+    arrowHead.style.opacity = '1';
   }
 }
 
@@ -440,7 +476,7 @@ function drawOnboardingTabArrow(targetId) {
       const dArrow = `M ${startX} ${startY} C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${endX} ${endY}`;
       arrow.setAttribute('d', dArrow);
       
-      const dArrowHead = `M ${endX - 12} ${endY + 6} L ${endX} ${endY} L ${endX + 2} ${endY + 12}`;
+      const dArrowHead = calculateArrowHead(cp2X, cp2Y, endX, endY, 12, 30);
       arrowHead.setAttribute('d', dArrowHead);
     } else {
       // Start at right center of instruction box (for Claim Defense tab)
@@ -461,7 +497,7 @@ function drawOnboardingTabArrow(targetId) {
       arrow.setAttribute('d', dArrow);
       
       // Arrow head pointing to the Claim Defense tab (approaching from bottom-right)
-      const dArrowHead = `M ${endX - 2} ${endY + 12} L ${endX} ${endY} L ${endX + 12} ${endY + 6}`;
+      const dArrowHead = calculateArrowHead(cp2X, cp2Y, endX, endY, 12, 30);
       arrowHead.setAttribute('d', dArrowHead);
     }
     
@@ -469,10 +505,23 @@ function drawOnboardingTabArrow(targetId) {
       isTabArrowInitialized = true;
       arrow.style.transition = 'none';
       arrow.style.strokeDashoffset = '1000';
+      
+      arrowHead.style.transition = 'none';
+      arrowHead.style.opacity = '0';
+      
       setTimeout(() => {
         arrow.style.transition = 'stroke-dashoffset 800ms ease-in-out';
         arrow.style.strokeDashoffset = '0';
+        
+        // Fade in arrowhead after the 800ms drawing completes
+        setTimeout(() => {
+          arrowHead.style.transition = 'opacity 250ms ease-in-out';
+          arrowHead.style.opacity = '1';
+        }, 700);
       }, 50);
+    } else {
+      arrowHead.style.transition = 'none';
+      arrowHead.style.opacity = '1';
     }
   }
 }
