@@ -1,5 +1,5 @@
-/* Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+/* Google Fonts - Lora for editorial headings, Inter for clean UI body text */
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
   --bg-primary: #050816;
@@ -13,11 +13,15 @@
   --teal-accent: #14b8a6;
 }
 
-body {
+body, input, textarea, button, select {
   font-family: 'Inter', sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   overflow: hidden;
+}
+
+h1, h2, h3, h4, #hero-headline, #onboarding-instruction-text, .font-serif {
+  font-family: 'Lora', Georgia, serif;
 }
 
 /* Custom animated gradient background - premium Gemini glow */
@@ -131,26 +135,32 @@ body {
   width: 380px;
   background: rgba(11, 16, 35, 0.95);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: transform 600ms cubic-bezier(0.25, 1, 0.5, 1),
+  transition: width 600ms cubic-bezier(0.25, 1, 0.5, 1),
+              transform 600ms cubic-bezier(0.25, 1, 0.5, 1),
               opacity 600ms cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .side-panel.collapsed {
+  width: 0 !important;
   transform: translateX(100%);
   opacity: 0;
   pointer-events: none;
+  border: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* Interactive card hover states */
 .card-hover {
-  background: rgba(11, 16, 35, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #11162d;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   transition: all 300ms cubic-bezier(0.25, 1, 0.5, 1);
 }
 .card-hover:hover {
+  background: #161f42;
   transform: translateY(-4px);
-  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.15);
-  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.5);
 }
 
 /* Accordion expand transitions */
@@ -178,26 +188,25 @@ body {
 
 /* Onboarding Active State Blurs and Dims */
 body.onboarding-active #hero-background-container {
-  filter: blur(8px) brightness(0.35);
-  opacity: 0.15;
-  pointer-events: none;
+  display: none !important;
 }
 
-body.onboarding-active #view-home:not(.onboarding-focus) {
-  filter: blur(8px) brightness(0.35);
-  opacity: 0.25;
-  pointer-events: none;
+body:not(.onboarding-active) #hero-background-container {
+  position: relative;
+  z-index: 10;
+  width: 100%;
 }
+
 
 body.onboarding-active #nav-segmented-control:not(.z-50) {
-  filter: blur(8px) brightness(0.35);
-  opacity: 0.25;
+  filter: blur(1.5px) brightness(0.85);
+  opacity: 0.75;
   pointer-events: none;
 }
 
 body.onboarding-active #chat-interactive-area:not(.z-50) {
-  filter: blur(8px) brightness(0.35);
-  opacity: 0.25;
+  filter: blur(1.5px) brightness(0.85);
+  opacity: 0.75;
   pointer-events: none;
 }
 
@@ -210,3 +219,12 @@ body.onboarding-active .fixed.bottom-6.right-6 {
 /* Custom z-indexes used in markup */
 .z-35 { z-index: 35; }
 .z-45 { z-index: 45; }
+
+/* Layout stability overrides to bypass Tailwind compiler latency */
+#input-bar-container {
+  position: relative !important;
+}
+
+#onboarding-cards {
+  position: absolute !important;
+}

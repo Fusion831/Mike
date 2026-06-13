@@ -118,13 +118,31 @@ const mockCoverageResponse = {
   ]
 };
 
+// Size overlays to window dimensions to prevent SVG coordinate scaling mismatch
+function resizeOverlaySVGs() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const spotlight = document.getElementById('spotlight-overlay');
+  const annotation = document.getElementById('annotation-layer');
+  if (spotlight) {
+    spotlight.setAttribute('width', w);
+    spotlight.setAttribute('height', h);
+  }
+  if (annotation) {
+    annotation.setAttribute('width', w);
+    annotation.setAttribute('height', h);
+  }
+}
+
 // Initial Setup
 window.addEventListener('DOMContentLoaded', () => {
   lucide.createIcons();
   checkOnboardingStatus();
   adjustInputDock();
+  resizeOverlaySVGs();
   window.addEventListener('resize', () => {
     adjustInputDock();
+    resizeOverlaySVGs();
     if (document.getElementById('spotlight-overlay').classList.contains('hidden') === false) {
       updateSpotlight();
     }
@@ -173,6 +191,9 @@ function startOnboarding() {
   isAnalysisMode = false;
   adjustInputDock();
   
+  // Ensure overlays are resized correctly relative to the current viewport
+  resizeOverlaySVGs();
+  
   // Add body class for backdrop blur / dim selectors
   document.body.classList.add('onboarding-active');
   
@@ -219,9 +240,26 @@ function updateOnboardingStep() {
 
 // Update the dark SVG overlay spotlight mask coordinates
 function updateSpotlight() {
-  // Clean up previous Step 1 annotations
+  // Clean up previous annotations
   document.getElementById('annotation-layer').classList.add('hidden');
   isStep1AnnotationInitialized = false;
+  isTabArrowInitialized = false;
+  
+  // Show onboarding cards only on Step 2, hide on other steps to prevent bleed-through
+  const onboardingCards = document.getElementById('onboarding-cards');
+  if (onboardingCards) {
+    if (currentStep === 2) {
+      onboardingCards.classList.remove('hidden');
+      setTimeout(() => {
+        onboardingCards.style.opacity = '1';
+        onboardingCards.style.transform = 'scale(1)';
+      }, 50);
+    } else {
+      onboardingCards.classList.add('hidden');
+      onboardingCards.style.opacity = '0';
+      onboardingCards.style.transform = 'scale(0.95)';
+    }
+  }
   
   // Dynamic z-indexing for parent container to keep inputs/cards sharp above backdrop filter
   const interactiveArea = document.getElementById('chat-interactive-area');
@@ -241,12 +279,6 @@ function updateSpotlight() {
     spotlightPaddingX = 12;
     spotlightPaddingY = 12;
     spotlightRadius = 16;
-    document.getElementById('onboarding-cards').classList.remove('hidden');
-    // Ensure it fades in
-    setTimeout(() => {
-      document.getElementById('onboarding-cards').style.opacity = '1';
-      document.getElementById('onboarding-cards').style.transform = 'scale(1)';
-    }, 50);
   } else if (currentStep === 3) {
     spotlightTargetId = 'nav-segmented-control';
     spotlightPaddingX = 16;
@@ -299,9 +331,13 @@ function updateSpotlightCoords() {
     hole.setAttribute('rx', spotlightRadius);
     hole.setAttribute('ry', spotlightRadius);
     
-    // Custom SVG sketch annotations for Step 1
+    // Custom SVG sketch annotations for Step 1, 3, and 4
     if (currentStep === 1) {
       drawHanddrawnCircleAndArrow(rect);
+    } else if (currentStep === 3) {
+      drawOnboardingTabArrow('tab-home');
+    } else if (currentStep === 4) {
+      drawOnboardingTabArrow('tab-defense');
     }
   }
 }
@@ -365,18 +401,107 @@ function drawHanddrawnCircleAndArrow(btnRect) {
   }
 }
 
+let isTabArrowInitialized = false;
+
+function drawOnboardingTabArrow(targetId) {
+  const layer = document.getElementById('annotation-layer');
+  layer.classList.remove('hidden');
+  
+  const circle = document.getElementById('annotation-circle');
+  const arrow = document.getElementById('annotation-arrow');
+  const arrowHead = document.getElementById('annotation-arrow-head');
+  
+  circle.setAttribute('d', '');
+  
+  const inst = document.getElementById('onboarding-instruction-container');
+  const target = document.getElementById(targetId);
+  
+  if (inst && target && arrow && arrowHead) {
+    const instRect = inst.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    
+    let startX, startY, endX, endY, cp1X, cp1Y, cp2X, cp2Y;
+    
+    if (targetId === 'tab-home') {
+      // Start at left center of instruction box
+      startX = instRect.left - 4;
+      startY = instRect.top + (instRect.height / 2);
+      
+      // End at bottom center of tab button
+      endX = targetRect.left + (targetRect.width / 2);
+      endY = targetRect.bottom + 8;
+      
+      // Bending curve sweeping out left, then up and right
+      cp1X = startX - 120;
+      cp1Y = startY + 20;
+      cp2X = startX - 60;
+      cp2Y = endY + 80;
+      
+      const dArrow = `M ${startX} ${startY} C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${endX} ${endY}`;
+      arrow.setAttribute('d', dArrow);
+      
+      const dArrowHead = `M ${endX - 12} ${endY + 6} L ${endX} ${endY} L ${endX + 2} ${endY + 12}`;
+      arrowHead.setAttribute('d', dArrowHead);
+    } else {
+      // Start at right center of instruction box (for Claim Defense tab)
+      startX = instRect.right + 4;
+      startY = instRect.top + (instRect.height / 2);
+      
+      // End at bottom center of tab button
+      endX = targetRect.left + (targetRect.width / 2);
+      endY = targetRect.bottom + 8;
+      
+      // Bending curve sweeping out right, then up and left
+      cp1X = startX + 120;
+      cp1Y = startY + 20;
+      cp2X = startX + 60;
+      cp2Y = endY + 80;
+      
+      const dArrow = `M ${startX} ${startY} C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${endX} ${endY}`;
+      arrow.setAttribute('d', dArrow);
+      
+      // Arrow head pointing to the Claim Defense tab (approaching from bottom-right)
+      const dArrowHead = `M ${endX - 2} ${endY + 12} L ${endX} ${endY} L ${endX + 12} ${endY + 6}`;
+      arrowHead.setAttribute('d', dArrowHead);
+    }
+    
+    if (!isTabArrowInitialized) {
+      isTabArrowInitialized = true;
+      arrow.style.transition = 'none';
+      arrow.style.strokeDashoffset = '1000';
+      setTimeout(() => {
+        arrow.style.transition = 'stroke-dashoffset 800ms ease-in-out';
+        arrow.style.strokeDashoffset = '0';
+      }, 50);
+    }
+  }
+}
+
 let lastHighlightedElement = null;
+let addedRelativeClass = false;
 
 function highlightElement(elId) {
   if (lastHighlightedElement) {
-    lastHighlightedElement.classList.remove('relative', 'z-50');
+    if (addedRelativeClass) {
+      lastHighlightedElement.classList.remove('relative');
+    }
+    lastHighlightedElement.classList.remove('z-50');
+    addedRelativeClass = false;
   }
   const el = document.getElementById(elId);
   if (el) {
-    el.classList.add('relative', 'z-50');
+    const hasPosition = el.classList.contains('relative') || 
+                        el.classList.contains('absolute') || 
+                        el.classList.contains('fixed');
+    if (!hasPosition) {
+      el.classList.add('relative');
+      addedRelativeClass = true;
+    }
+    el.classList.add('z-50');
     lastHighlightedElement = el;
   } else {
     lastHighlightedElement = null;
+    addedRelativeClass = false;
   }
 }
 
@@ -386,6 +511,18 @@ function updateOnboardingControlsAndTracker() {
   const btnNext = document.getElementById('onboarding-next-btn');
   const skipBtn = document.getElementById('onboarding-skip-btn');
   
+  // Dynamically position the instruction container: top-16 for slides 1/2, center-aligned for slides 3/4
+  const instContainer = document.getElementById('onboarding-instruction-container');
+  if (instContainer) {
+    if (currentStep === 1 || currentStep === 2) {
+      instContainer.style.top = '4rem'; // top-16
+      instContainer.style.transform = 'translateX(-50%) translateY(0)';
+    } else {
+      instContainer.style.top = '40%'; // vertical center-ish
+      instContainer.style.transform = 'translateX(-50%) translateY(-50%)';
+    }
+  }
+
   // 1. Update Instructions
   if (currentStep === 1) {
     instruction.innerText = "Attach your policy to get started";
@@ -393,30 +530,30 @@ function updateOnboardingControlsAndTracker() {
     btnNext.innerText = "Next";
     skipBtn.classList.remove('hidden');
   } else if (currentStep === 2) {
-    instruction.innerText = "Select a sample scenario to begin";
+    instruction.innerText = "Ask Mike Anything";
     btnPrev.classList.remove('opacity-50', 'pointer-events-none');
     btnNext.innerText = "Next";
     skipBtn.classList.remove('hidden');
   } else if (currentStep === 3) {
-    instruction.innerText = "Review your policy summary in the Home workspace";
+    instruction.innerText = "Use Home to explore coverage, exclusions, benefits, waiting periods, and policy details.";
     btnPrev.classList.remove('opacity-50', 'pointer-events-none');
     btnNext.innerText = "Next";
     skipBtn.classList.remove('hidden');
   } else if (currentStep === 4) {
-    instruction.innerText = "Appeal claims and draft letters in Claim Defense";
+    instruction.innerText = "Use Claim Defense to understand claim denials, identify supporting evidence, and prepare stronger appeal responses.";
     btnPrev.classList.remove('opacity-50', 'pointer-events-none');
     btnNext.innerText = "Finish";
     skipBtn.classList.add('hidden');
   }
   
-  // 2. Highlight step pill inside connected tracker
+  // 2. Highlight active step capsule/tablet
   for (let i = 1; i <= 4; i++) {
     const lbl = document.getElementById(`step-lbl-${i}`);
     if (lbl) {
       if (i === currentStep) {
-        lbl.className = "step-pill flex-1 text-center py-2 px-1 rounded-xl text-[10px] font-bold transition-all active";
+        lbl.className = "h-1.5 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 shadow-lg shadow-purple-500/30 transition-all duration-300";
       } else {
-        lbl.className = "step-pill flex-1 text-center py-2 px-1 rounded-xl text-[10px] font-bold transition-all";
+        lbl.className = "h-1.5 w-8 rounded-full bg-slate-800 transition-all duration-300";
       }
     }
   }
@@ -482,10 +619,7 @@ function skipOnboarding() {
     }, 500);
   }
   
-  if (lastHighlightedElement) {
-    lastHighlightedElement.classList.remove('relative', 'z-50');
-    lastHighlightedElement = null;
-  }
+  highlightElement(null);
   
   // Set default state
   setWorkspace('home');

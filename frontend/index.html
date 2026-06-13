@@ -81,10 +81,10 @@
           </div>
 
           <!-- Hero Landing / Onboarding State (Visible by default in Landing mode) -->
-          <div id="landing-container" class="flex-1 flex flex-col justify-between items-center py-8 max-w-2xl mx-auto w-full transition-layout select-none relative z-10">
+          <div id="landing-container" class="flex-1 flex flex-col justify-center items-center py-6 max-w-2xl mx-auto w-full transition-layout select-none relative space-y-6">
             
             <!-- Background Hero (will be blurred and dimmed during onboarding) -->
-            <div id="hero-background-container" class="absolute inset-0 flex flex-col justify-center items-center text-center space-y-4 transition-all duration-700 pointer-events-none z-0">
+            <div id="hero-background-container" class="flex flex-col justify-center items-center text-center space-y-4 transition-all duration-700 w-full z-10">
               <h1 id="hero-headline" class="text-4xl md:text-5xl font-extrabold text-slate-100 tracking-tight leading-tight max-w-lg">
                 Insurance is confusing.<br><span class="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Mike translates.</span>
               </h1>
@@ -93,47 +93,10 @@
               </div>
             </div>
 
-            <!-- Onboarding Instruction Callout (Top Center) -->
-            <div id="onboarding-instruction-container" class="text-center opacity-0 transition-all duration-500 z-50 w-full max-w-lg hidden">
-              <!-- Dark glassmorphism card with border glow and shadow -->
-              <div class="glass-callout p-5 rounded-3xl border border-blue-500/30 shadow-lg shadow-blue-500/5 backdrop-blur-xl">
-                <h2 id="onboarding-instruction-text" class="text-lg md:text-xl font-bold text-white tracking-wide">
-                  Attach your policy to get started
-                </h2>
-              </div>
-            </div>
-
             <!-- Input area (placeholder, chat-interactive-area will move here on load/reset) -->
-            <div id="landing-input-dock" class="w-full flex flex-col items-center z-50 relative mt-auto mb-auto"></div>
+            <div id="landing-input-dock" class="w-full flex flex-col items-center z-50 relative"></div>
 
-            <!-- Onboarding Tour Card (Bottom) -->
-            <div id="onboarding-tour-card" class="w-full max-w-lg bg-[#0b1023]/90 border border-blue-500/30 rounded-3xl p-5 shadow-2xl z-50 relative hidden opacity-0 transition-all duration-500 flex flex-col space-y-4">
-              <!-- Navigation controls -->
-              <div id="onboarding-controls" class="flex items-center justify-between w-full">
-                <button id="onboarding-prev-btn" onclick="onboardingBack()" class="px-5 py-2 text-sm font-bold text-slate-400 hover:text-white rounded-full bg-slate-800/40 hover:bg-slate-800 transition-all focus:outline-none">
-                  Back
-                </button>
-                
-                <button id="onboarding-skip-btn" onclick="skipOnboarding()" class="text-sm font-bold text-slate-500 hover:text-slate-300 focus:outline-none">
-                  Skip Tour
-                </button>
-
-                <button id="onboarding-next-btn" onclick="onboardingNext()" class="px-6 py-2 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full shadow transition-all focus:outline-none">
-                  Next
-                </button>
-              </div>
-
-              <!-- Divider -->
-              <div class="border-t border-slate-800"></div>
-
-              <!-- Progress Tracker connected pill layout -->
-              <div id="onboarding-progress-tracker" class="w-full grid grid-cols-4 gap-1.5 p-1 bg-slate-950/80 rounded-full border border-white/5">
-                <div class="step-pill text-center py-2 px-1 rounded-full text-[10px] font-bold tracking-tight transition-all duration-300" id="step-lbl-1">Upload Policy</div>
-                <div class="step-pill text-center py-2 px-1 rounded-full text-[10px] font-bold tracking-tight transition-all duration-300" id="step-lbl-2">Ask Questions</div>
-                <div class="step-pill text-center py-2 px-1 rounded-full text-[10px] font-bold tracking-tight transition-all duration-300" id="step-lbl-3">Understand Coverage</div>
-                <div class="step-pill text-center py-2 px-1 rounded-full text-[10px] font-bold tracking-tight transition-all duration-300" id="step-lbl-4">Claim Defense</div>
-              </div>
-            </div>
+          </div>
 
           </div>
 
@@ -188,7 +151,7 @@
     </main>
 
     <!-- Standalone Interactive Area (moved dynamically between docks) -->
-    <div id="chat-interactive-area" class="w-full max-w-2xl mx-auto flex flex-col items-center shrink-0 z-20 transition-layout px-4">
+    <div id="chat-interactive-area" class="relative w-full max-w-2xl mx-auto flex flex-col items-center shrink-0 transition-layout px-4">
       
       <!-- Question suggestion chips (visible only after Ingest, disappears when active) -->
       <div id="starter-prompt-chips" class="flex flex-wrap justify-center gap-2 mb-4 opacity-0 scale-95 pointer-events-none transition-all duration-500">
@@ -207,23 +170,23 @@
       </div>
 
       <!-- Input Bar container -->
-      <div id="input-bar-container" class="w-full flex flex-col">
+      <div id="input-bar-container" class="w-full flex flex-col relative">
         
         <!-- Onboarding cards (visible only during Step 2 of Onboarding) -->
-        <div id="onboarding-cards" class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full mb-6 max-w-3xl mx-auto hidden transition-layout opacity-0 scale-95 duration-500">
-          <button onclick="selectOnboardingCard(0)" class="card-hover p-4 text-left rounded-2xl flex flex-col justify-between h-32 shadow-sm border hover:shadow-lg focus:outline-none">
+        <div id="onboarding-cards" class="absolute bottom-full left-0 right-0 mb-4 grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl mx-auto hidden transition-layout opacity-0 scale-95 duration-500 z-50">
+          <button onclick="selectOnboardingCard(0)" class="card-hover p-3.5 text-left rounded-2xl flex flex-col justify-between h-24 shadow-sm border hover:shadow-lg focus:outline-none">
             <span class="text-sm font-semibold text-slate-200 leading-tight">Is my knee surgery covered under this policy?</span>
             <span class="text-xs text-electric-blue flex items-center font-medium">Evaluate coverage scenario <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-1"></i></span>
           </button>
-          <button onclick="selectOnboardingCard(1)" class="card-hover p-4 text-left rounded-2xl flex flex-col justify-between h-32 shadow-sm border hover:shadow-lg focus:outline-none">
+          <button onclick="selectOnboardingCard(1)" class="card-hover p-3.5 text-left rounded-2xl flex flex-col justify-between h-24 shadow-sm border hover:shadow-lg focus:outline-none">
             <span class="text-sm font-semibold text-slate-200 leading-tight">Summarize my policy in simple terms.</span>
             <span class="text-xs text-electric-blue flex items-center font-medium">Simplify terms <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-1"></i></span>
           </button>
-          <button onclick="selectOnboardingCard(2)" class="card-hover p-4 text-left rounded-2xl flex flex-col justify-between h-32 shadow-sm border hover:shadow-lg focus:outline-none">
+          <button onclick="selectOnboardingCard(2)" class="card-hover p-3.5 text-left rounded-2xl flex flex-col justify-between h-24 shadow-sm border hover:shadow-lg focus:outline-none">
             <span class="text-sm font-semibold text-slate-200 leading-tight">Explain this section of my policy in plain English.</span>
             <span class="text-xs text-electric-blue flex items-center font-medium">Deconstruct legalese <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-1"></i></span>
           </button>
-          <button onclick="selectOnboardingCard(3)" class="card-hover p-4 text-left rounded-2xl flex flex-col justify-between h-32 shadow-sm border hover:shadow-lg focus:outline-none">
+          <button onclick="selectOnboardingCard(3)" class="card-hover p-3.5 text-left rounded-2xl flex flex-col justify-between h-24 shadow-sm border hover:shadow-lg focus:outline-none">
             <span class="text-sm font-semibold text-slate-200 leading-tight">What are the most important exclusions I should know about?</span>
             <span class="text-xs text-electric-blue flex items-center font-medium">Check exclusions <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-1"></i></span>
           </button>
@@ -232,7 +195,7 @@
         <!-- Input text box & upload control -->
         <div id="chat-input-wrapper" class="glass-input p-2 rounded-3xl flex items-center shadow-lg border relative transition-layout w-full">
           <!-- Ingestion Upload Button - Embedded INSIDE the input wrapper on the left -->
-          <button id="upload-btn" onclick="triggerFileUpload()" class="p-2.5 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded-2xl transition-colors focus:outline-none flex items-center justify-center shrink-0 ml-1">
+          <button id="upload-btn" onclick="triggerFileUpload()" class="relative p-2.5 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded-2xl transition-colors focus:outline-none flex items-center justify-center shrink-0 ml-1">
             <i data-lucide="plus" class="w-5 h-5"></i>
           </button>
           <input type="file" id="file-uploader" accept=".pdf" class="hidden" onchange="handleFileSelected(event)">
@@ -258,7 +221,7 @@
   </div>
 
   <!-- Onboarding Backdrop Blur Overlay -->
-  <div id="onboarding-backdrop-blur" class="fixed inset-0 z-35 bg-[#050816]/50 backdrop-blur-md transition-opacity duration-500 hidden opacity-0 pointer-events-auto"></div>
+  <div id="onboarding-backdrop-blur" class="fixed inset-0 z-35 bg-[#050816]/15 backdrop-blur-[1.5px] transition-opacity duration-500 hidden opacity-0 pointer-events-auto"></div>
 
   <!-- Onboarding Spotlight SVG Mask Overlay -->
   <svg id="spotlight-overlay" class="fixed inset-0 w-full h-full pointer-events-none z-40 transition-opacity duration-500 hidden select-none">
@@ -271,7 +234,7 @@
       </mask>
     </defs>
     <!-- Background overlay linked to mask -->
-    <rect width="100%" height="100%" fill="rgba(5, 8, 22, 0.7)" mask="url(#spotlight-mask)" class="pointer-events-auto"></rect>
+    <rect width="100%" height="100%" fill="rgba(5, 8, 22, 0.3)" mask="url(#spotlight-mask)" class="pointer-events-auto"></rect>
   </svg>
 
   <!-- Hand-drawn Annotation Overlay Layer -->
@@ -296,6 +259,45 @@
     <!-- Sketched Circle around the upload button -->
     <path id="annotation-circle" d="" fill="none" stroke="url(#blue-purple-grad)" stroke-width="2.5" stroke-linecap="round" filter="url(#glow-filter)" stroke-dasharray="1000" stroke-dashoffset="1000" />
   </svg>
+
+  <!-- Onboarding Instruction Callout (Top Center, Persistent/Fixed) -->
+  <div id="onboarding-instruction-container" class="fixed top-16 left-[50%] -translate-x-1/2 text-center opacity-0 transition-all duration-500 z-50 w-full max-w-lg hidden">
+    <!-- Dark glassmorphism card with border glow and shadow -->
+    <div class="glass-callout p-6 rounded-3xl border border-blue-500/30 shadow-lg shadow-blue-500/5 backdrop-blur-xl">
+      <h2 id="onboarding-instruction-text" class="text-xl md:text-2xl font-extrabold text-white tracking-wide">
+        Attach your policy to get started
+      </h2>
+    </div>
+  </div>
+
+  <!-- Onboarding Tour Card (Bottom Center, Persistent/Fixed) -->
+  <div id="onboarding-tour-card" class="fixed bottom-8 left-[50%] -translate-x-1/2 w-full max-w-lg bg-[#0b1023]/95 border border-blue-500/30 rounded-3xl p-5 shadow-2xl z-50 hidden opacity-0 transition-all duration-500 flex flex-col space-y-4">
+    <!-- Navigation controls -->
+    <div id="onboarding-controls" class="flex items-center justify-between w-full">
+      <button id="onboarding-prev-btn" onclick="onboardingBack()" class="px-5 py-2 text-sm font-bold text-slate-200 hover:text-white rounded-full bg-slate-800/80 hover:bg-slate-700 transition-all focus:outline-none">
+        Back
+      </button>
+      
+      <button id="onboarding-skip-btn" onclick="skipOnboarding()" class="text-sm font-bold text-slate-400 hover:text-slate-200 focus:outline-none">
+        Skip Tour
+      </button>
+
+      <button id="onboarding-next-btn" onclick="onboardingNext()" class="px-6 py-2 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full shadow transition-all focus:outline-none">
+        Next
+      </button>
+    </div>
+
+    <!-- Divider -->
+    <div class="border-t border-slate-800"></div>
+
+    <!-- Progress Tracker clean tablets (capsules) indicating the active slide -->
+    <div id="onboarding-progress-tracker" class="flex justify-center items-center space-x-2.5 py-1.5">
+      <div class="h-1.5 w-8 rounded-full transition-all duration-300" id="step-lbl-1"></div>
+      <div class="h-1.5 w-8 rounded-full transition-all duration-300" id="step-lbl-2"></div>
+      <div class="h-1.5 w-8 rounded-full transition-all duration-300" id="step-lbl-3"></div>
+      <div class="h-1.5 w-8 rounded-full transition-all duration-300" id="step-lbl-4"></div>
+    </div>
+  </div>
 
   <!-- Floating Help Button to Restart Tour -->
   <div class="fixed bottom-6 right-6 z-30">
