@@ -625,7 +625,7 @@ function onboardingBack() {
   }
 }
 
-function skipOnboarding() {
+function skipOnboarding(shouldTransition = true) {
   localStorage.setItem('mike_onboarding_completed', 'true');
   document.getElementById('spotlight-overlay').classList.add('hidden');
   document.getElementById('annotation-layer').classList.add('hidden');
@@ -671,9 +671,12 @@ function skipOnboarding() {
   
   highlightElement(null);
   
-  // Set default state
-  setWorkspace('home');
-  adjustInputDock();
+  if (shouldTransition) {
+    // Set default state
+    setWorkspace('home');
+    adjustInputDock();
+    updateNavigationState();
+  }
 }
 
 function finishOnboarding() {
@@ -688,8 +691,25 @@ function finishOnboarding() {
 function setWorkspace(type) {
   if (type === 'home') {
     transitionToState('home');
+  } else if (type === 'conversation') {
+    if (policyId) {
+      transitionToState('conversation');
+    }
   } else {
     transitionToState('defense');
+  }
+}
+
+function updateNavigationState() {
+  const tabChat = document.getElementById('tab-conversation');
+  if (tabChat) {
+    if (policyId) {
+      tabChat.removeAttribute('disabled');
+      tabChat.className = "relative z-10 flex-1 py-1.5 text-center text-sm font-medium text-slate-500 cursor-pointer transition-colors focus:outline-none";
+    } else {
+      tabChat.setAttribute('disabled', 'true');
+      tabChat.className = "relative z-10 flex-1 py-1.5 text-center text-sm font-medium text-slate-500 opacity-40 cursor-not-allowed transition-colors focus:outline-none";
+    }
   }
 }
 
@@ -701,24 +721,48 @@ function transitionToState(newState) {
   
   const navIndicator = document.getElementById('segmented-indicator');
   const btnHome = document.getElementById('tab-home');
+  const btnConversation = document.getElementById('tab-conversation');
   const btnDefense = document.getElementById('tab-defense');
   
   const viewHome = document.getElementById('view-home');
+  const viewConversation = document.getElementById('view-conversation');
   const viewDefense = document.getElementById('view-defense');
+  
   const landingContainer = document.getElementById('landing-container');
   const chatArea = document.getElementById('chat-area');
   const policyCard = document.getElementById('policy-card-container');
   const starterChips = document.getElementById('starter-prompt-chips');
   
+  // Helper to assign tab styles based on active status
+  function updateTabStyle(btn, isActive, isEnabled = true) {
+    if (!btn) return;
+    if (isActive) {
+      btn.className = "relative z-10 flex-1 py-1.5 text-center text-sm font-bold text-slate-800 transition-colors focus:outline-none";
+    } else {
+      if (isEnabled) {
+        btn.className = "relative z-10 flex-1 py-1.5 text-center text-sm font-medium text-slate-500 transition-colors focus:outline-none";
+      } else {
+        btn.className = "relative z-10 flex-1 py-1.5 text-center text-sm font-medium text-slate-500 opacity-40 cursor-not-allowed transition-colors focus:outline-none";
+      }
+    }
+  }
+
   // Tabs highlight updating
-  if (newState === 'defense') {
-    if (navIndicator) navIndicator.style.transform = 'translateX(100%)';
-    if (btnHome) btnHome.className = "relative z-10 flex-1 py-1.5 text-center text-sm font-medium text-slate-500 transition-colors focus:outline-none";
-    if (btnDefense) btnDefense.className = "relative z-10 flex-1 py-1.5 text-center text-sm font-bold text-primary transition-colors focus:outline-none";
-  } else {
+  if (newState === 'home') {
     if (navIndicator) navIndicator.style.transform = 'translateX(0)';
-    if (btnHome) btnHome.className = "relative z-10 flex-1 py-1.5 text-center text-sm font-bold text-primary transition-colors focus:outline-none";
-    if (btnDefense) btnDefense.className = "relative z-10 flex-1 py-1.5 text-center text-sm font-medium text-slate-500 transition-colors focus:outline-none";
+    updateTabStyle(btnHome, true);
+    updateTabStyle(btnConversation, false, !!policyId);
+    updateTabStyle(btnDefense, false);
+  } else if (newState === 'conversation') {
+    if (navIndicator) navIndicator.style.transform = 'translateX(100%)';
+    updateTabStyle(btnHome, false);
+    updateTabStyle(btnConversation, true, !!policyId);
+    updateTabStyle(btnDefense, false);
+  } else if (newState === 'defense') {
+    if (navIndicator) navIndicator.style.transform = 'translateX(200%)';
+    updateTabStyle(btnHome, false);
+    updateTabStyle(btnConversation, false, !!policyId);
+    updateTabStyle(btnDefense, true);
   }
   
   // Local fade out helper using css transitions
@@ -741,10 +785,25 @@ function transitionToState(newState) {
     void el.offsetWidth;
     el.style.opacity = '1';
     el.style.transform = 'translateY(0)';
+    setTimeout(() => {
+      if (el.style.opacity === '1') {
+        el.style.opacity = '';
+      }
+      if (el.style.transform === 'translateY(0px)' || el.style.transform === 'translateY(0)') {
+        el.style.transform = '';
+      }
+    }, 950);
   }
   
   if (newState === 'defense') {
-    fadeOut(viewHome, 200).then(() => {
+    const hidePromises = [];
+    if (viewHome && !viewHome.classList.contains('hidden')) {
+      hidePromises.push(fadeOut(viewHome, 200));
+    }
+    if (viewConversation && !viewConversation.classList.contains('hidden')) {
+      hidePromises.push(fadeOut(viewConversation, 200));
+    }
+    Promise.all(hidePromises).then(() => {
       fadeIn(viewDefense);
     });
   } else if (newState === 'home') {
@@ -752,8 +811,8 @@ function transitionToState(newState) {
     if (viewDefense && !viewDefense.classList.contains('hidden')) {
       hidePromises.push(fadeOut(viewDefense, 200));
     }
-    if (chatArea && !chatArea.classList.contains('hidden')) {
-      hidePromises.push(fadeOut(chatArea, 200));
+    if (viewConversation && !viewConversation.classList.contains('hidden')) {
+      hidePromises.push(fadeOut(viewConversation, 200));
     }
     
     Promise.all(hidePromises).then(() => {
@@ -761,6 +820,7 @@ function transitionToState(newState) {
         viewHome.classList.remove('hidden');
         void viewHome.offsetWidth;
       }
+      fadeIn(viewHome);
       
       isAnalysisMode = false;
       adjustInputDock();
@@ -798,15 +858,16 @@ function transitionToState(newState) {
     if (viewDefense && !viewDefense.classList.contains('hidden')) {
       hidePromises.push(fadeOut(viewDefense, 200));
     }
-    if (landingContainer && !landingContainer.classList.contains('hidden')) {
-      hidePromises.push(fadeOut(landingContainer, 200));
+    if (viewHome && !viewHome.classList.contains('hidden')) {
+      hidePromises.push(fadeOut(viewHome, 200));
     }
     
     Promise.all(hidePromises).then(() => {
-      if (viewHome && viewHome.classList.contains('hidden')) {
-        viewHome.classList.remove('hidden');
-        void viewHome.offsetWidth;
+      if (viewConversation && viewConversation.classList.contains('hidden')) {
+        viewConversation.classList.remove('hidden');
+        void viewConversation.offsetWidth;
       }
+      fadeIn(viewConversation);
       
       isAnalysisMode = true;
       adjustInputDock();
@@ -818,10 +879,11 @@ function transitionToState(newState) {
       
       toggleSnapshot(true);
       
-      if (policyCard) {
-        policyCard.classList.remove('pointer-events-none');
-        policyCard.style.opacity = '1';
-        policyCard.style.transform = 'translateY(0)';
+      const convPolicyCard = document.getElementById('conversation-policy-card-container');
+      if (convPolicyCard) {
+        convPolicyCard.classList.remove('pointer-events-none');
+        convPolicyCard.style.opacity = '1';
+        convPolicyCard.style.transform = 'translateY(0)';
       }
       
       fadeIn(chatArea);
@@ -839,7 +901,7 @@ function handleFileSelected(event) {
   const file = event.target.files[0];
   if (!file) return;
   
-  if (!file.name.toLowerCase().endswith('.pdf') && !file.name.toLowerCase().endsWith('.pdf')) {
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
     alert("Only PDF policies are supported");
     return;
   }
@@ -917,7 +979,7 @@ function uploadPolicy(file) {
 }
 
 // Transition from Onboarding to Analysis mode layout
-function transitionToAnalysisMode(summary = null) {
+function transitionToAnalysisMode(summary = null, autoTransitionState = 'home') {
   const activeSummary = summary || mockPolicySummary.summary;
   
   const bg = document.getElementById('app-bg');
@@ -925,9 +987,15 @@ function transitionToAnalysisMode(summary = null) {
   
   const cardName = document.getElementById('policy-card-name');
   if (cardName) cardName.innerText = policyName;
+  const convCardName = document.getElementById('conversation-policy-card-name');
+  if (convCardName) convCardName.innerText = policyName;
   
   populatePolicySnapshot(activeSummary);
-  transitionToState('home');
+  updateNavigationState();
+  
+  if (autoTransitionState) {
+    transitionToState(autoTransitionState);
+  }
 }
 
 function populatePolicySnapshot(summary) {
@@ -1047,15 +1115,19 @@ function selectOnboardingCard(index) {
   if (index === 2) promptText = "Explain this section of my policy in plain English.";
   if (index === 3) promptText = "What are the most important exclusions I should know about?";
   
-  // Fast finish onboarding
-  skipOnboarding();
+  // Fast finish onboarding without default home transition
+  skipOnboarding(false);
   
-  // Trigger mock policy registration and send message
+  // Trigger mock policy registration without auto transition
   policyName = "Standard_Choice_Policy.pdf";
   policyId = uuidv4();
   
-  transitionToAnalysisMode();
-  submitPrompt(promptText);
+  transitionToAnalysisMode(null, null);
+  
+  // Set chat input and trigger transition directly to conversation
+  document.getElementById('chat-input').value = promptText;
+  transitionToState('conversation');
+  sendMessage();
 }
 
 function sendMessage() {
