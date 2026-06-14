@@ -39,15 +39,12 @@
     
     <!-- Top Navigation Segmented Control -->
     <header class="w-full flex justify-center py-6 px-4 shrink-0">
-      <div id="nav-segmented-control" class="relative glass-panel rounded-full p-1.5 flex space-x-1 shadow-lg max-w-md w-full z-30">
+      <div id="nav-segmented-control" class="relative glass-panel rounded-full p-1.5 flex space-x-1 shadow-lg max-w-sm w-full z-30">
         <!-- Sliding active tab background pill -->
-        <div id="segmented-indicator" class="segmented-indicator absolute top-1.5 bottom-1.5 left-1.5 rounded-full bg-white shadow-md w-[calc(33.333%-4px)]"></div>
+        <div id="segmented-indicator" class="segmented-indicator absolute top-1.5 bottom-1.5 left-1.5 rounded-full bg-white shadow-md w-[calc(50%-6px)]"></div>
         
-        <button id="tab-home" onclick="setWorkspace('home')" class="relative z-10 flex-1 py-1.5 text-center text-sm font-bold text-primary transition-colors focus:outline-none">
+        <button id="tab-home" onclick="setWorkspace('home')" class="relative z-10 flex-1 py-1.5 text-center text-sm font-bold text-slate-800 transition-colors focus:outline-none">
           Home
-        </button>
-        <button id="tab-conversation" onclick="setWorkspace('conversation')" disabled class="relative z-10 flex-1 py-1.5 text-center text-sm font-medium text-slate-500 opacity-40 cursor-not-allowed transition-colors focus:outline-none">
-          Conversation
         </button>
         <button id="tab-defense" onclick="setWorkspace('defense')" class="relative z-10 flex-1 py-1.5 text-center text-sm font-medium text-slate-500 transition-colors focus:outline-none">
           Claim Defense
@@ -61,72 +58,50 @@
       <!-- ==========================================
            1. HOME EXPERIENCE (Chat & Snapshot)
            ========================================== -->
-      <!-- 1. HOME VIEW (Landing & File Ingestion) -->
-      <div id="view-home" class="flex-1 flex flex-col justify-between h-full bg-transparent overflow-hidden transition-layout relative state-transition-target">
+      <!-- 1. HOME VIEW (Landing, Ingestion, Chat & Snapshot) -->
+      <div id="view-home" class="flex-1 flex space-x-6 h-full overflow-hidden transition-layout relative state-transition-target">
         
-        <!-- Policy Card Status (Hidden before Ingest) -->
-        <div id="policy-card-container" class="absolute top-0 left-0 w-full flex justify-start z-20 pointer-events-none opacity-0 transition-all duration-700 transform -translate-y-4">
-          <div id="policy-status-card" class="glass-panel p-3.5 rounded-2xl flex items-center space-x-3 shadow-md border border-slate-200 pointer-events-auto">
-            <div class="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
-              <i data-lucide="file-text" class="w-5 h-5"></i>
-            </div>
-            <div class="flex flex-col">
-              <span id="policy-card-name" class="text-sm font-semibold text-slate-800 leading-tight">Policy Document.pdf</span>
-              <span class="text-xs text-blue-600 flex items-center font-medium mt-0.5">
-                Analyzed <i data-lucide="check" class="w-3.5 h-3.5 ml-1"></i>
-              </span>
-            </div>
-            <button onclick="transitionToState('conversation')" class="text-slate-400 hover:text-slate-600 pl-4 border-l border-slate-200 focus:outline-none" title="Go to Conversation">
-              <i data-lucide="message-square" class="w-4 h-4"></i>
-            </button>
-          </div>
-        </div>
-
-        <!-- Hero Landing / Onboarding State -->
-        <div id="landing-container" class="flex-1 flex flex-col justify-center items-center py-6 max-w-2xl mx-auto w-full transition-layout state-transition-target select-none relative space-y-6">
-          
-          <!-- Background Hero (will be blurred and dimmed during onboarding) -->
-          <div id="hero-background-container" class="flex flex-col justify-center items-center text-center space-y-4 transition-all duration-700 w-full z-10">
-            <h1 id="hero-headline" class="text-4xl md:text-5xl font-extrabold text-slate-100 tracking-tight leading-tight max-w-lg">
-              Insurance is confusing.<br><span class="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Mike translates.</span>
-            </h1>
-            <div id="assistant-greeting" class="text-slate-400 text-base font-semibold opacity-75 max-w-md">
-              Hey, Mike here — your policy decoder.
-            </div>
-          </div>
-
-          <!-- Input area (placeholder, chat-interactive-area will move here on load/reset) -->
-          <div id="landing-input-dock" class="w-full flex flex-col items-center z-50 relative"></div>
-
-        </div>
-      </div>
-
-      <!-- 2. CONVERSATION VIEW (Active Chat Session) -->
-      <div id="view-conversation" class="flex-1 flex space-x-6 h-full overflow-hidden transition-layout relative hidden state-transition-target">
-        
-        <!-- Left Side: Chat Area -->
+        <!-- Left Side: Chat & Landing Layout -->
         <div class="flex-1 flex flex-col justify-between h-full bg-transparent overflow-hidden relative transition-layout">
           
-          <!-- Shared Policy Card Status for Conversation View -->
-          <div id="conversation-policy-card-container" class="absolute top-0 left-0 w-full flex justify-start z-20 pointer-events-none opacity-0 transition-all duration-700 transform -translate-y-4">
-            <div id="conversation-policy-status-card" class="glass-panel p-3.5 rounded-2xl flex items-center space-x-3 shadow-md border border-slate-200 pointer-events-auto">
+          <!-- Policy Card Status (Hidden before Ingest) -->
+          <div id="policy-card-container" class="absolute top-0 left-0 w-full flex justify-start z-20 pointer-events-none opacity-0 transition-all duration-700 transform -translate-y-4">
+            <div id="policy-status-card" class="glass-panel p-3.5 rounded-2xl flex items-center space-x-3 shadow-md border border-slate-200 pointer-events-auto">
               <div class="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
                 <i data-lucide="file-text" class="w-5 h-5"></i>
               </div>
               <div class="flex flex-col">
-                <span id="conversation-policy-card-name" class="text-sm font-semibold text-slate-800 leading-tight">Policy Document.pdf</span>
+                <span id="policy-card-name" class="text-sm font-semibold text-slate-800 leading-tight">Policy Document.pdf</span>
                 <span class="text-xs text-blue-600 flex items-center font-medium mt-0.5">
                   Analyzed <i data-lucide="check" class="w-3.5 h-3.5 ml-1"></i>
                 </span>
               </div>
-              <button onclick="toggleSnapshot()" class="text-slate-400 hover:text-slate-600 pl-4 border-l border-slate-200 focus:outline-none" title="Toggle Snapshot">
-                <i data-lucide="sidebar" class="w-4 h-4"></i>
+              <button onclick="transitionToState('conversation')" class="text-slate-400 hover:text-slate-600 pl-4 border-l border-slate-200 focus:outline-none" title="Go to Conversation">
+                <i data-lucide="message-square" class="w-4 h-4"></i>
               </button>
             </div>
           </div>
 
+          <!-- Hero Landing / Onboarding State -->
+          <div id="landing-container" class="flex-1 flex flex-col justify-center items-center py-6 max-w-2xl mx-auto w-full transition-layout state-transition-target select-none relative space-y-6">
+            
+            <!-- Background Hero (will be blurred and dimmed during onboarding) -->
+            <div id="hero-background-container" class="flex flex-col justify-center items-center text-center space-y-4 transition-all duration-700 w-full z-10">
+              <h1 id="hero-headline" class="text-4xl md:text-5xl font-extrabold text-slate-100 tracking-tight leading-tight max-w-lg">
+                Insurance is confusing.<br><span class="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Mike translates.</span>
+              </h1>
+              <div id="assistant-greeting" class="text-slate-400 text-base font-semibold opacity-75 max-w-md">
+                Hey, Mike here — your policy decoder.
+              </div>
+            </div>
+
+            <!-- Input area (placeholder, chat-interactive-area will move here on load/reset) -->
+            <div id="landing-input-dock" class="w-full flex flex-col items-center z-50 relative"></div>
+
+          </div>
+
           <!-- Chat Area -->
-          <div id="chat-area" class="flex-1 flex flex-col justify-between h-full overflow-hidden">
+          <div id="chat-area" class="flex-1 flex flex-col justify-between h-full overflow-hidden hidden state-transition-target">
             <!-- Chat Scroll Area -->
             <div id="chat-messages-container" class="flex-1 overflow-y-auto pt-24 pb-4 space-y-5 px-1 relative transition-layout select-text">
               <div id="messages-list" class="space-y-5"></div>

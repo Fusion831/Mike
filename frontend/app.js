@@ -243,6 +243,13 @@ function updateSpotlight() {
   isStep1AnnotationInitialized = false;
   isTabArrowInitialized = false;
   
+  // Hide homepage starter chips during onboarding to prevent bleed-through
+  const starterChips = document.getElementById('starter-prompt-chips');
+  if (starterChips) {
+    starterChips.classList.add('hidden', 'pointer-events-none');
+    starterChips.style.opacity = '0';
+  }
+  
   // Show onboarding cards only on Step 2, hide on other steps to prevent bleed-through
   const onboardingCards = document.getElementById('onboarding-cards');
   if (onboardingCards) {
@@ -701,16 +708,7 @@ function setWorkspace(type) {
 }
 
 function updateNavigationState() {
-  const tabChat = document.getElementById('tab-conversation');
-  if (tabChat) {
-    if (policyId) {
-      tabChat.removeAttribute('disabled');
-      tabChat.className = "relative z-10 flex-1 py-1.5 text-center text-sm font-medium text-slate-500 cursor-pointer transition-colors focus:outline-none";
-    } else {
-      tabChat.setAttribute('disabled', 'true');
-      tabChat.className = "relative z-10 flex-1 py-1.5 text-center text-sm font-medium text-slate-500 opacity-40 cursor-not-allowed transition-colors focus:outline-none";
-    }
-  }
+  // Navigation state updates not required as Conversation tab was removed.
 }
 
 function transitionToState(newState) {
@@ -721,11 +719,9 @@ function transitionToState(newState) {
   
   const navIndicator = document.getElementById('segmented-indicator');
   const btnHome = document.getElementById('tab-home');
-  const btnConversation = document.getElementById('tab-conversation');
   const btnDefense = document.getElementById('tab-defense');
   
   const viewHome = document.getElementById('view-home');
-  const viewConversation = document.getElementById('view-conversation');
   const viewDefense = document.getElementById('view-defense');
   
   const landingContainer = document.getElementById('landing-container');
@@ -748,20 +744,13 @@ function transitionToState(newState) {
   }
 
   // Tabs highlight updating
-  if (newState === 'home') {
+  if (newState === 'home' || newState === 'conversation') {
     if (navIndicator) navIndicator.style.transform = 'translateX(0)';
     updateTabStyle(btnHome, true);
-    updateTabStyle(btnConversation, false, !!policyId);
-    updateTabStyle(btnDefense, false);
-  } else if (newState === 'conversation') {
-    if (navIndicator) navIndicator.style.transform = 'translateX(100%)';
-    updateTabStyle(btnHome, false);
-    updateTabStyle(btnConversation, true, !!policyId);
     updateTabStyle(btnDefense, false);
   } else if (newState === 'defense') {
-    if (navIndicator) navIndicator.style.transform = 'translateX(200%)';
+    if (navIndicator) navIndicator.style.transform = 'translateX(100%)';
     updateTabStyle(btnHome, false);
-    updateTabStyle(btnConversation, false, !!policyId);
     updateTabStyle(btnDefense, true);
   }
   
@@ -800,9 +789,6 @@ function transitionToState(newState) {
     if (viewHome && !viewHome.classList.contains('hidden')) {
       hidePromises.push(fadeOut(viewHome, 200));
     }
-    if (viewConversation && !viewConversation.classList.contains('hidden')) {
-      hidePromises.push(fadeOut(viewConversation, 200));
-    }
     Promise.all(hidePromises).then(() => {
       fadeIn(viewDefense);
     });
@@ -811,83 +797,82 @@ function transitionToState(newState) {
     if (viewDefense && !viewDefense.classList.contains('hidden')) {
       hidePromises.push(fadeOut(viewDefense, 200));
     }
-    if (viewConversation && !viewConversation.classList.contains('hidden')) {
-      hidePromises.push(fadeOut(viewConversation, 200));
-    }
     
     Promise.all(hidePromises).then(() => {
       if (viewHome && viewHome.classList.contains('hidden')) {
         viewHome.classList.remove('hidden');
         void viewHome.offsetWidth;
-      }
-      fadeIn(viewHome);
-      
-      isAnalysisMode = false;
-      adjustInputDock();
-      toggleSnapshot(false);
-      
-      if (policyId) {
-        if (policyCard) {
-          policyCard.classList.remove('pointer-events-none');
-          policyCard.style.opacity = '1';
-          policyCard.style.transform = 'translateY(0)';
-        }
-        if (starterChips) {
-          starterChips.classList.remove('hidden', 'pointer-events-none');
-          void starterChips.offsetWidth;
-          starterChips.style.opacity = '1';
-          starterChips.style.transform = 'scale(1)';
-        }
-      } else {
-        if (policyCard) {
-          policyCard.style.opacity = '0';
-          policyCard.style.transform = 'translateY(-16px)';
-          policyCard.classList.add('pointer-events-none');
-        }
-        if (starterChips) {
-          starterChips.style.opacity = '0';
-          starterChips.style.transform = 'scale(0.95)';
-          starterChips.classList.add('pointer-events-none');
-        }
+        fadeIn(viewHome);
       }
       
-      fadeIn(landingContainer);
+      // Transition elements inside view-home
+      fadeOut(chatArea, 200).then(() => {
+        isAnalysisMode = false;
+        adjustInputDock();
+        toggleSnapshot(false);
+        
+        if (policyId) {
+          if (policyCard) {
+            policyCard.classList.remove('pointer-events-none');
+            policyCard.style.opacity = '1';
+            policyCard.style.transform = 'translateY(0)';
+          }
+          if (starterChips) {
+            starterChips.classList.remove('hidden', 'pointer-events-none');
+            void starterChips.offsetWidth;
+            starterChips.style.opacity = '1';
+            starterChips.style.transform = 'scale(1)';
+          }
+        } else {
+          if (policyCard) {
+            policyCard.style.opacity = '0';
+            policyCard.style.transform = 'translateY(-16px)';
+            policyCard.classList.add('pointer-events-none');
+          }
+          if (starterChips) {
+            starterChips.style.opacity = '0';
+            starterChips.style.transform = 'scale(0.95)';
+            starterChips.classList.add('pointer-events-none');
+          }
+        }
+        
+        fadeIn(landingContainer);
+      });
     });
   } else if (newState === 'conversation') {
     const hidePromises = [];
     if (viewDefense && !viewDefense.classList.contains('hidden')) {
       hidePromises.push(fadeOut(viewDefense, 200));
     }
-    if (viewHome && !viewHome.classList.contains('hidden')) {
-      hidePromises.push(fadeOut(viewHome, 200));
-    }
     
     Promise.all(hidePromises).then(() => {
-      if (viewConversation && viewConversation.classList.contains('hidden')) {
-        viewConversation.classList.remove('hidden');
-        void viewConversation.offsetWidth;
-      }
-      fadeIn(viewConversation);
-      
-      isAnalysisMode = true;
-      adjustInputDock();
-      
-      if (starterChips) {
-        starterChips.classList.add('hidden', 'pointer-events-none');
-        starterChips.style.opacity = '0';
+      if (viewHome && viewHome.classList.contains('hidden')) {
+        viewHome.classList.remove('hidden');
+        void viewHome.offsetWidth;
+        fadeIn(viewHome);
       }
       
-      toggleSnapshot(true);
-      
-      const convPolicyCard = document.getElementById('conversation-policy-card-container');
-      if (convPolicyCard) {
-        convPolicyCard.classList.remove('pointer-events-none');
-        convPolicyCard.style.opacity = '1';
-        convPolicyCard.style.transform = 'translateY(0)';
-      }
-      
-      fadeIn(chatArea);
-      scrollChatToBottom();
+      // Transition elements inside view-home
+      fadeOut(landingContainer, 200).then(() => {
+        isAnalysisMode = true;
+        adjustInputDock();
+        
+        if (starterChips) {
+          starterChips.classList.add('hidden', 'pointer-events-none');
+          starterChips.style.opacity = '0';
+        }
+        
+        toggleSnapshot(true);
+        
+        if (policyCard) {
+          policyCard.classList.remove('pointer-events-none');
+          policyCard.style.opacity = '1';
+          policyCard.style.transform = 'translateY(0)';
+        }
+        
+        fadeIn(chatArea);
+        scrollChatToBottom();
+      });
     });
   }
 }
