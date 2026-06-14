@@ -714,36 +714,29 @@ function updateNavigationState() {
 function transitionToState(newState) {
   const prevState = currentAppState;
   currentAppState = newState;
-  
+
   console.log(`Transitioning state: ${prevState} -> ${newState}`);
-  
+
   const navIndicator = document.getElementById('segmented-indicator');
-  const btnHome = document.getElementById('tab-home');
-  const btnDefense = document.getElementById('tab-defense');
-  
-  const viewHome = document.getElementById('view-home');
+  const btnHome     = document.getElementById('tab-home');
+  const btnDefense  = document.getElementById('tab-defense');
+
+  const viewHome    = document.getElementById('view-home');
   const viewDefense = document.getElementById('view-defense');
-  
+
   const landingContainer = document.getElementById('landing-container');
-  const chatArea = document.getElementById('chat-area');
-  const policyCard = document.getElementById('policy-card-container');
-  const starterChips = document.getElementById('starter-prompt-chips');
-  
-  // Helper to assign tab styles based on active status
-  function updateTabStyle(btn, isActive, isEnabled = true) {
+  const chatArea         = document.getElementById('chat-area');
+  const policyCard       = document.getElementById('policy-card-container');
+  const starterChips     = document.getElementById('starter-prompt-chips');
+
+  // ── Tab styling ──────────────────────────────────────────────────────────
+  function updateTabStyle(btn, isActive) {
     if (!btn) return;
-    if (isActive) {
-      btn.className = "relative z-10 flex-1 py-1.5 text-center text-sm font-bold text-slate-800 transition-colors focus:outline-none";
-    } else {
-      if (isEnabled) {
-        btn.className = "relative z-10 flex-1 py-1.5 text-center text-sm font-medium text-slate-500 transition-colors focus:outline-none";
-      } else {
-        btn.className = "relative z-10 flex-1 py-1.5 text-center text-sm font-medium text-slate-500 opacity-40 cursor-not-allowed transition-colors focus:outline-none";
-      }
-    }
+    btn.className = isActive
+      ? 'relative z-10 flex-1 py-1.5 text-center text-sm font-bold text-slate-800 transition-colors focus:outline-none'
+      : 'relative z-10 flex-1 py-1.5 text-center text-sm font-medium text-slate-500 transition-colors focus:outline-none';
   }
 
-  // Tabs highlight updating
   if (newState === 'home' || newState === 'conversation') {
     if (navIndicator) navIndicator.style.transform = 'translateX(0)';
     updateTabStyle(btnHome, true);
@@ -753,128 +746,138 @@ function transitionToState(newState) {
     updateTabStyle(btnHome, false);
     updateTabStyle(btnDefense, true);
   }
-  
-  // Local fade out helper using css transitions
-  function fadeOut(el, duration = 200) {
+
+  // ── Fade helpers for view-level transitions (home ↔ defense) ─────────────
+  function fadeOutView(el, duration = 200) {
     if (!el || el.classList.contains('hidden')) return Promise.resolve();
     el.style.opacity = '0';
     el.style.transform = 'translateY(8px)';
-    return new Promise(resolve => {
-      setTimeout(() => {
-        el.classList.add('hidden');
-        resolve();
-      }, duration);
-    });
+    return new Promise(resolve => setTimeout(() => {
+      el.classList.add('hidden');
+      el.style.opacity = '';
+      el.style.transform = '';
+      resolve();
+    }, duration));
   }
-  
-  // Local fade in helper
-  function fadeIn(el) {
+
+  function fadeInView(el) {
     if (!el) return;
     el.classList.remove('hidden');
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(8px)';
     void el.offsetWidth;
+    el.style.transition = 'opacity 250ms ease, transform 250ms ease';
     el.style.opacity = '1';
     el.style.transform = 'translateY(0)';
-    setTimeout(() => {
-      if (el.style.opacity === '1') {
-        el.style.opacity = '';
-      }
-      if (el.style.transform === 'translateY(0px)' || el.style.transform === 'translateY(0)') {
-        el.style.transform = '';
-      }
-    }, 950);
+    setTimeout(() => { el.style.transition = el.style.opacity = el.style.transform = ''; }, 300);
   }
-  
+
+  // ── DEFENSE ──────────────────────────────────────────────────────────────
   if (newState === 'defense') {
-    const hidePromises = [];
-    if (viewHome && !viewHome.classList.contains('hidden')) {
-      hidePromises.push(fadeOut(viewHome, 200));
-    }
-    Promise.all(hidePromises).then(() => {
-      fadeIn(viewDefense);
-    });
+    const p = [];
+    if (viewHome && !viewHome.classList.contains('hidden')) p.push(fadeOutView(viewHome, 200));
+    return Promise.all(p).then(() => fadeInView(viewDefense));
+
+  // ── HOME ─────────────────────────────────────────────────────────────────
   } else if (newState === 'home') {
-    const hidePromises = [];
-    if (viewDefense && !viewDefense.classList.contains('hidden')) {
-      hidePromises.push(fadeOut(viewDefense, 200));
-    }
-    
-    Promise.all(hidePromises).then(() => {
-      if (viewHome && viewHome.classList.contains('hidden')) {
-        viewHome.classList.remove('hidden');
-        void viewHome.offsetWidth;
-        fadeIn(viewHome);
-      }
-      
-      // Transition elements inside view-home
-      fadeOut(chatArea, 200).then(() => {
-        isAnalysisMode = false;
-        adjustInputDock();
-        toggleSnapshot(false);
-        
-        if (policyId) {
-          if (policyCard) {
-            policyCard.classList.remove('pointer-events-none');
-            policyCard.style.opacity = '1';
-            policyCard.style.transform = 'translateY(0)';
-          }
-          if (starterChips) {
-            starterChips.classList.remove('hidden', 'pointer-events-none');
-            void starterChips.offsetWidth;
-            starterChips.style.opacity = '1';
-            starterChips.style.transform = 'scale(1)';
-          }
-        } else {
-          if (policyCard) {
-            policyCard.style.opacity = '0';
-            policyCard.style.transform = 'translateY(-16px)';
-            policyCard.classList.add('pointer-events-none');
-          }
-          if (starterChips) {
-            starterChips.style.opacity = '0';
-            starterChips.style.transform = 'scale(0.95)';
-            starterChips.classList.add('pointer-events-none');
-          }
-        }
-        
-        fadeIn(landingContainer);
+    const p = [];
+    if (viewDefense && !viewDefense.classList.contains('hidden')) p.push(fadeOutView(viewDefense, 200));
+
+    return Promise.all(p).then(() => {
+      // Ensure the home view wrapper is visible
+      if (viewHome && viewHome.classList.contains('hidden')) viewHome.classList.remove('hidden');
+
+      // ── INSTANT swap: hide chat, show landing ──
+      // Cancel any in-flight CSS transitions first (transition-layout has
+      // 900ms 'all' which fights display:none if a previous fadeIn is mid-play)
+      [chatArea, landingContainer].forEach(el => {
+        if (!el) return;
+        el.style.transition = 'none';
+        void el.offsetWidth; // force reflow so 'none' takes effect synchronously
       });
-    });
-  } else if (newState === 'conversation') {
-    const hidePromises = [];
-    if (viewDefense && !viewDefense.classList.contains('hidden')) {
-      hidePromises.push(fadeOut(viewDefense, 200));
-    }
-    
-    Promise.all(hidePromises).then(() => {
-      if (viewHome && viewHome.classList.contains('hidden')) {
-        viewHome.classList.remove('hidden');
-        void viewHome.offsetWidth;
-        fadeIn(viewHome);
-      }
-      
-      // Transition elements inside view-home
-      fadeOut(landingContainer, 200).then(() => {
-        isAnalysisMode = true;
-        adjustInputDock();
-        
-        if (starterChips) {
-          starterChips.classList.add('hidden', 'pointer-events-none');
-          starterChips.style.opacity = '0';
-        }
-        
-        toggleSnapshot(true);
-        
+      if (chatArea)         chatArea.classList.add('hidden');
+      if (landingContainer) landingContainer.classList.remove('hidden');
+      // Restore transitions for future animations
+      [chatArea, landingContainer].forEach(el => { if (el) el.style.transition = ''; });
+
+      // Restore normal dock
+      isAnalysisMode = false;
+      adjustInputDock();
+      toggleSnapshot(false);
+
+      // Chips & policy card visibility
+      if (policyId) {
         if (policyCard) {
           policyCard.classList.remove('pointer-events-none');
           policyCard.style.opacity = '1';
           policyCard.style.transform = 'translateY(0)';
         }
-        
-        fadeIn(chatArea);
-        scrollChatToBottom();
+        if (starterChips) {
+          starterChips.classList.remove('hidden', 'pointer-events-none');
+          void starterChips.offsetWidth;
+          starterChips.style.opacity = '1';
+          starterChips.style.transform = 'scale(1)';
+        }
+      } else {
+        if (policyCard) {
+          policyCard.style.opacity = '0';
+          policyCard.style.transform = 'translateY(-16px)';
+          policyCard.classList.add('pointer-events-none');
+        }
+        if (starterChips) {
+          starterChips.style.opacity = '0';
+          starterChips.style.transform = 'scale(0.95)';
+          starterChips.classList.add('pointer-events-none');
+        }
+      }
+    });
+
+  // ── CONVERSATION ─────────────────────────────────────────────────────────
+  } else if (newState === 'conversation') {
+    const p = [];
+    if (viewDefense && !viewDefense.classList.contains('hidden')) p.push(fadeOutView(viewDefense, 200));
+
+    return Promise.all(p).then(() => {
+      // Ensure the home view wrapper is visible
+      if (viewHome && viewHome.classList.contains('hidden')) viewHome.classList.remove('hidden');
+
+      // ── INSTANT swap: hide landing, show chat ──
+      // Cancel any in-flight CSS transitions first (transition-layout has
+      // 900ms 'all' which fights display:none if a previous fadeIn is mid-play)
+      [landingContainer, chatArea].forEach(el => {
+        if (!el) return;
+        el.style.transition = 'none';
+        void el.offsetWidth; // force reflow so 'none' takes effect synchronously
       });
+      if (landingContainer) landingContainer.classList.add('hidden');
+      if (chatArea)         chatArea.classList.remove('hidden');
+      // Restore transitions for future animations
+      [landingContainer, chatArea].forEach(el => { if (el) el.style.transition = ''; });
+
+      // Move input to chat dock
+      isAnalysisMode = true;
+      adjustInputDock();
+
+      // Hide starter chips
+      if (starterChips) {
+        starterChips.classList.add('hidden', 'pointer-events-none');
+        starterChips.style.opacity = '0';
+      }
+
+      // Open policy snapshot and show policy card
+      toggleSnapshot(true);
+      if (policyCard) {
+        policyCard.classList.remove('pointer-events-none');
+        policyCard.style.opacity = '1';
+        policyCard.style.transform = 'translateY(0)';
+      }
+
+      scrollChatToBottom();
+      // Promise resolves here — chat-area is already visible and full-height
     });
   }
+
+  return Promise.resolve();
 }
 
 // Upload Policy Flow
@@ -1103,16 +1106,20 @@ function selectOnboardingCard(index) {
   // Fast finish onboarding without default home transition
   skipOnboarding(false);
   
-  // Trigger mock policy registration without auto transition
+  // Register mock policy
   policyName = "Standard_Choice_Policy.pdf";
   policyId = uuidv4();
   
+  // Setup analysis mode data (snapshot, card name) but don't auto-transition yet
   transitionToAnalysisMode(null, null);
   
-  // Set chat input and trigger transition directly to conversation
+  // Pre-populate the chat input
   document.getElementById('chat-input').value = promptText;
-  transitionToState('conversation');
-  sendMessage();
+  
+  // Transition to conversation state, then send the message once the view is ready
+  transitionToState('conversation').then(() => {
+    sendMessage();
+  });
 }
 
 function sendMessage() {
@@ -1120,11 +1127,22 @@ function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
   
+  // If not already in conversation state, transition first then send
   if (currentAppState !== 'conversation') {
-    transitionToState('conversation');
+    input.value = text; // preserve value during transition
+    transitionToState('conversation').then(() => {
+      _dispatchMessage(text);
+    });
+    return;
   }
   
-  // Clear starter prompts chips
+  _dispatchMessage(text);
+}
+
+function _dispatchMessage(text) {
+  const input = document.getElementById('chat-input');
+  
+  // Clear starter prompt chips
   const chips = document.getElementById('starter-prompt-chips');
   if (chips) {
     chips.classList.add('hidden');
