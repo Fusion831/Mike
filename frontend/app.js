@@ -141,6 +141,19 @@ window.addEventListener('DOMContentLoaded', () => {
   checkOnboardingStatus();
   adjustInputDock();
   resizeOverlaySVGs();
+
+  // Seed the baseline history entry so Back works correctly from Home.
+  // replaceState (not pushState) — we are not adding a new entry, just
+  // annotating the page the user already landed on.
+  window.history.replaceState({ appState: 'home' }, '', '');
+
+  // Handle browser Back / Forward navigation.
+  // addHistory: false prevents re-entrancy (popstate must not push another entry).
+  window.addEventListener('popstate', (event) => {
+    const appState = event.state?.appState ?? 'home';
+    transitionToState(appState, { addHistory: false });
+  });
+
   window.addEventListener('resize', () => {
     adjustInputDock();
     resizeOverlaySVGs();
@@ -695,15 +708,17 @@ function finishOnboarding() {
 }
 
 // Workspace Swapper
-function setWorkspace(type) {
+// options is threaded through so tab buttons can pass { addHistory: true }
+// while internal/onboarding callers leave it at the default { addHistory: false }.
+function setWorkspace(type, options = {}) {
   if (type === 'home') {
-    transitionToState('home');
+    transitionToState('home', options);
   } else if (type === 'conversation') {
     if (policyId) {
-      transitionToState('conversation');
+      transitionToState('conversation', options);
     }
   } else {
-    transitionToState('defense');
+    transitionToState('defense', options);
   }
 }
 
@@ -711,23 +726,29 @@ function updateNavigationState() {
   // Navigation state updates not required as Conversation tab was removed.
 }
 
-function transitionToState(newState) {
+function transitionToState(newState, { addHistory = false } = {}) {
   const prevState = currentAppState;
   currentAppState = newState;
 
-  console.log(`Transitioning state: ${prevState} -> ${newState}`);
+  // Push a browser history entry for explicit user-driven navigation.
+  // Internal transitions (onboarding, post-upload, popstate handling) pass
+  // addHistory: false so they do not pollute the history stack.
+  if (addHistory) {
+    window.history.pushState({ appState: newState }, '', '');
+  }
+
+  console.log(`Transitioning state: ${prevState} -> ${newState} (history: ${addHistory})`);
 
   const navIndicator = document.getElementById('segmented-indicator');
   const btnHome     = document.getElementById('tab-home');
   const btnDefense  = document.getElementById('tab-defense');
 
-  const viewHome    = document.getElementById('view-home');
-  const viewDefense = document.getElementById('view-defense');
+  const viewHome         = document.getElementById('view-home');
+  const viewConversation = document.getElementById('view-conversation');
+  const viewDefense      = document.getElementById('view-defense');
 
-  const landingContainer = document.getElementById('landing-container');
-  const chatArea         = document.getElementById('chat-area');
-  const policyCard       = document.getElementById('policy-card-container');
-  const starterChips     = document.getElementById('starter-prompt-chips');
+  const policyCard   = document.getElementById('policy-card-container');
+  const starterChips = document.getElementById('starter-prompt-chips');
 
   // ── Tab styling ──────────────────────────────────────────────────────────
   function updateTabStyle(btn, isActive) {
@@ -776,29 +797,18 @@ function transitionToState(newState) {
   if (newState === 'defense') {
     const p = [];
     if (viewHome && !viewHome.classList.contains('hidden')) p.push(fadeOutView(viewHome, 200));
+    if (viewConversation && !viewConversation.classList.contains('hidden')) p.push(fadeOutView(viewConversation, 200));
     return Promise.all(p).then(() => fadeInView(viewDefense));
 
   // ── HOME ─────────────────────────────────────────────────────────────────
   } else if (newState === 'home') {
     const p = [];
-    if (viewDefense && !viewDefense.classList.contains('hidden')) p.push(fadeOutView(viewDefense, 200));
+    if (viewDefense     && !viewDefense.classList.contains('hidden'))     p.push(fadeOutView(viewDefense, 200));
+    if (viewConversation && !viewConversation.classList.contains('hidden')) p.push(fadeOutView(viewConversation, 200));
 
     return Promise.all(p).then(() => {
-      // Ensure the home view wrapper is visible
+      // Show the Home view
       if (viewHome && viewHome.classList.contains('hidden')) viewHome.classList.remove('hidden');
-
-      // ── INSTANT swap: hide chat, show landing ──
-      // Cancel any in-flight CSS transitions first (transition-layout has
-      // 900ms 'all' which fights display:none if a previous fadeIn is mid-play)
-      [chatArea, landingContainer].forEach(el => {
-        if (!el) return;
-        el.style.transition = 'none';
-        void el.offsetWidth; // force reflow so 'none' takes effect synchronously
-      });
-      if (chatArea)         chatArea.classList.add('hidden');
-      if (landingContainer) landingContainer.classList.remove('hidden');
-      // Restore transitions for future animations
-      [chatArea, landingContainer].forEach(el => { if (el) el.style.transition = ''; });
 
       // Restore normal dock
       isAnalysisMode = false;
@@ -836,44 +846,28 @@ function transitionToState(newState) {
   } else if (newState === 'conversation') {
     const p = [];
     if (viewDefense && !viewDefense.classList.contains('hidden')) p.push(fadeOutView(viewDefense, 200));
+    if (viewHome    && !viewHome.classList.contains('hidden'))    p.push(fadeOutView(viewHome, 200));
 
     return Promise.all(p).then(() => {
-      // Ensure the home view wrapper is visible
-      if (viewHome && viewHome.classList.contains('hidden')) viewHome.classList.remove('hidden');
+      // Show the dedicated Conversation view
+      if (viewConversation && viewConversation.classList.contains('hidden')) {
+        viewConversation.classList.remove('hidden');
+      }
 
-      // ── INSTANT swap: hide landing, show chat ──
-      // Cancel any in-flight CSS transitions first (transition-layout has
-      // 900ms 'all' which fights display:none if a previous fadeIn is mid-play)
-      [landingContainer, chatArea].forEach(el => {
-        if (!el) return;
-        el.style.transition = 'none';
-        void el.offsetWidth; // force reflow so 'none' takes effect synchronously
-      });
-      if (landingContainer) landingContainer.classList.add('hidden');
-      if (chatArea)         chatArea.classList.remove('hidden');
-      // Restore transitions for future animations
-      [landingContainer, chatArea].forEach(el => { if (el) el.style.transition = ''; });
-
-      // Move input to chat dock
+      // Move input into chat dock
       isAnalysisMode = true;
       adjustInputDock();
 
-      // Hide starter chips
+      // Hide starter chips (travel with #chat-interactive-area)
       if (starterChips) {
         starterChips.classList.add('hidden', 'pointer-events-none');
         starterChips.style.opacity = '0';
       }
 
-      // Open policy snapshot and show policy card
+      // Open policy snapshot
       toggleSnapshot(true);
-      if (policyCard) {
-        policyCard.classList.remove('pointer-events-none');
-        policyCard.style.opacity = '1';
-        policyCard.style.transform = 'translateY(0)';
-      }
 
       scrollChatToBottom();
-      // Promise resolves here — chat-area is already visible and full-height
     });
   }
 
@@ -1117,7 +1111,7 @@ function selectOnboardingCard(index) {
   document.getElementById('chat-input').value = promptText;
   
   // Transition to conversation state, then send the message once the view is ready
-  transitionToState('conversation').then(() => {
+  transitionToState('conversation', { addHistory: true }).then(() => {
     sendMessage();
   });
 }
@@ -1130,7 +1124,7 @@ function sendMessage() {
   // If not already in conversation state, transition first then send
   if (currentAppState !== 'conversation') {
     input.value = text; // preserve value during transition
-    transitionToState('conversation').then(() => {
+    transitionToState('conversation', { addHistory: true }).then(() => {
       _dispatchMessage(text);
     });
     return;
