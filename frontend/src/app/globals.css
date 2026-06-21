@@ -1,26 +1,103 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: var(--font-sans), sans-serif;
+  --font-serif: var(--font-serif), serif;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --bg-primary: #050816;
+  --bg-deep-navy: #0b1023;
+  --gemini-blue: #2563eb;
+  --electric-blue: #3b82f6;
+  --gemini-purple: #8b5cf6;
+  --accent-violet: #a855f7;
+  --text-primary: #f8fafc;
+  --text-muted: #94a3b8;
+  --gold-accent: #eab308;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* Premium radial backdrop glow */
+.animated-gradient {
+  background: 
+    radial-gradient(circle at 12% 25%, rgba(37, 99, 235, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 88% 75%, rgba(139, 92, 246, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, #0b1023 0%, #050816 100%);
+}
+
+/* Glassmorphism Panels */
+.glass-panel {
+  background: rgba(11, 16, 35, 0.45);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glass-input {
+  background: rgba(11, 16, 35, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+}
+
+.glass-input:focus-within {
+  border-color: rgba(139, 92, 246, 0.4);
+  box-shadow: 0 0 25px rgba(139, 92, 246, 0.12);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* Soft Focus Citation Glow Keyframes */
+@keyframes citation-highlight {
+  0% {
+    box-shadow: 0 0 0 0px rgba(234, 179, 8, 0);
+    background-color: rgba(234, 179, 8, 0);
+  }
+  15% {
+    box-shadow: 0 0 0 4px rgba(234, 179, 8, 0.25);
+    background-color: rgba(234, 179, 8, 0.08);
+  }
+  85% {
+    box-shadow: 0 0 0 4px rgba(234, 179, 8, 0.25);
+    background-color: rgba(234, 179, 8, 0.08);
+  }
+  100% {
+    box-shadow: 0 0 0 0px rgba(234, 179, 8, 0);
+    background-color: rgba(234, 179, 8, 0);
+  }
+}
+
+.animate-citation-pulse {
+  animation: citation-highlight 3000ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* Hide scrollbar default utilities */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
